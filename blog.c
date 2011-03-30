@@ -1,5 +1,4 @@
 #include "ff.h"
-#include "fcgi_stdio.h"
 
 void blog();
 void comment();

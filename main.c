@@ -1,27 +1,16 @@
-
-#include "fcgi_config.h"
 #include <stdlib.h>
-#include <dlfcn.h>
-
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
 
-#ifdef _WIN32
-#include <process.h>
-#else
-extern char **environ;
-#endif
-
-#include "fcgi_stdio.h"
+/* Include this or stdio will not work */
+#include <fcgi_stdio.h>
 
 #include "ff.h"
 #include "route.h"
 
-int main ()
-{
+int main () {
     int count = 0;
 
+    /* Load the controller .so from this sub directory */
     route_import_controllers("controllers/");
 
     while (FCGI_Accept() >= 0) {
@@ -32,6 +21,8 @@ int main ()
             "Request number %d,  Process ID: %d<p> %s %s\n", ++count, getpid(),
 							getenv("REQUEST_URI")
              );
+
+      /* Dispatch the request to the correct controller */
       route_dispatch(getenv("REQUEST_URI"));
     }
 

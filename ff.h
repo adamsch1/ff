@@ -2,6 +2,8 @@
 #define __FF__H
 
 #include <fcgi_stdio.h>
+#include "util.h"
+
 /**
  * 
  *

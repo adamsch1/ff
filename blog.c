@@ -10,7 +10,6 @@ struct ff_controller_t head[] = {
 };
 
 void blog()  {
-  printf("HERE!");
 }
 
 void comment() {

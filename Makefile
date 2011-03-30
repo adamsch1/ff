@@ -7,6 +7,6 @@ LIBS += -lz
 
 all: main
 
-main: main.c route.c
-	gcc -o ff -g main.c route.c $(LIBS) $(INC) -Wall
+main: main.c route.c util.c
+	gcc -o ff -g main.c route.c util.c $(LIBS) $(INC) -Wall
 

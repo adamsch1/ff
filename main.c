@@ -25,6 +25,7 @@ int main ()
     route_import_controllers("controllers/");
 
     while (FCGI_Accept() >= 0) {
+      route_dispatch();
       printf("Content-type: text/html\r\n"
             "\r\n"
             "<title>FastCGI echo</title>"

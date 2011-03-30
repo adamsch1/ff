@@ -10,11 +10,12 @@
 struct controller_t {
   struct ff_controller_t *head;
   struct controller_t *next;
-}
+};
 
-struct controller_t *controllers = 0;
+struct controller_t *controllers = NULL;
 
-void load_controller( const char *fp );
+static void load_controller( const char *fp );
+static int route_invoke( const char *uri, struct controller_t *controller );
 
 /**
  * Import controllers from controllers subdirectory
@@ -40,10 +41,8 @@ void route_import_controllers( const char *path )  {
 /**
  * Read in the .so specified by fp.  Links it into our global table of routes
  */
-void load_controller( const char *fp )  {
+static void load_controller( const char *fp )  {
   void *handle;
-  void (*ptr)();
-  void *d;
   struct ff_controller_t *head;
   struct controller_t *node;
 
@@ -65,21 +64,26 @@ void load_controller( const char *fp )  {
   controllers = node;
 }
 
+int route_dispatch( const char *uri)  {
+  return route_invoke( uri, controllers );
+}
+
 /**
  * Given path - go for it
  */
-int route_invoke( struct controller_t *controller )  {
-  char *uri;
-  struct controller_t *iter = controllers;
+static int route_invoke( const char *uri, struct controller_t *controller )  {
+  struct ff_controller_t *head;
 
-  while( iter )  {
-    head = iter->  
+  /** Once and a while we get to do some recursion **/
+  if( controller->next ) {
+    route_invoke( uri, controller->next );
   }
-  
-  while( head->route )  {
-    printf("here");
+
+  head = controller->head;  
+  while( head && head->route )  {
     if( strstr( uri, head->route ) == uri )  {
       head->ptr();
+      return 0;
     }
     head++;
   }

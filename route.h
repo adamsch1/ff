@@ -4,6 +4,6 @@
 #include "ff.h"
 
 void route_import_controllers( const char *path );
-int route_invoke( struct ff_controller_t *head );
+int route_dispatch();
 
 #endif

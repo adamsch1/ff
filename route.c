@@ -7,18 +7,26 @@
 #include <fnmatch.h>
 #include <dlfcn.h>
 
+/**
+ *  This file routes requests to the proper controller
+ */
+
+/**
+ * Lets us maintain a list of controllers and their functions
+ */
 struct controller_t {
   struct ff_controller_t *head;
   struct controller_t *next;
 };
 
+/* Linked list head */
 struct controller_t *controllers = NULL;
 
 static void load_controller( const char *fp );
 static int route_invoke( const char *uri, struct controller_t *controller );
 
 /**
- * Import controllers from controllers subdirectory
+ * Import controllers from path subdirectory
  */
 void route_import_controllers( const char *path )  {
   struct dirent *dp;
@@ -27,10 +35,14 @@ void route_import_controllers( const char *path )  {
 
   if( dir == NULL )  {
     fprintf(stderr, "Could not load any .so\n");
+    return;
   }
 
+  /* Read listing of files in the subdirectory */
   while((dp=readdir(dir)) != NULL )  {
+    /* Look specifically for .so files */
 		if( fnmatch("*.so", dp->d_name, FNM_NOESCAPE) == 0 )  {
+      /* Construct a useable filepath and try load the .so properly */
       str = alloca( (strlen("controllers")+strlen(dp->d_name))+10 );
       sprintf( str, "controllers/%s", dp->d_name );
       load_controller( str );
@@ -46,30 +58,37 @@ static void load_controller( const char *fp )  {
   struct ff_controller_t *head;
   struct controller_t *node;
 
+  /* Load the .so */
   handle = dlopen( fp, RTLD_LAZY);
   if( !handle )  {
     fprintf(stderr, "Could not load %s\n", fp);
     return;
   }
+
+  /* Look for the symbol name */
   head = dlsym(handle, "head");
   if( !head )  {
     fprintf(stderr, "Could not find handlers in %s\n", fp);
     return;
   }
 
-  // Allocate and link
+  /* Allocate and link into our list of controllers */
   node = (struct controller_t *)calloc(1,sizeof(struct controller_t));
   node->head = head;
   node->next = controllers;
   controllers = node;
 }
 
+/**
+ * Call this with the REQUEST_URI and it will invoke the correct 
+ * controller/function
+ */
 int route_dispatch( char *uri)  {
   return route_invoke( uri, controllers );
 }
 
 /**
- * Given path - go for it
+ * Walk our list of controllers and dispatch the correct one
  */
 static int route_invoke( const char *uri, struct controller_t *controller )  {
   struct ff_controller_t *head;
@@ -79,9 +98,12 @@ static int route_invoke( const char *uri, struct controller_t *controller )  {
     route_invoke( uri, controller->next );
   }
 
+  /** Walk this controller list of functions **/
   head = controller->head;  
   while( head && head->route )  {
+    /* Check if there is a match */
     if( strstr( uri, head->route ) == uri )  {
+      /* There is so invoke the controller function */
       head->ptr();
       return 0;
     }

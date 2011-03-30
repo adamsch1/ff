@@ -4,6 +4,6 @@
 #include "ff.h"
 
 void route_import_controllers( const char *path );
-int route_dispatch();
+int route_dispatch(char *uri);
 
 #endif

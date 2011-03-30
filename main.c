@@ -25,14 +25,14 @@ int main ()
     route_import_controllers("controllers/");
 
     while (FCGI_Accept() >= 0) {
-      route_dispatch();
       printf("Content-type: text/html\r\n"
             "\r\n"
-            "<title>FastCGI echo</title>"
-            "<h1>FastCGI echo</h1>\n"
+            "<title>ff test</title>"
+            "<h1>Testing basic controller dispatching</h1>\n"
             "Request number %d,  Process ID: %d<p> %s %s\n", ++count, getpid(),
 							getenv("REQUEST_URI")
              );
+      route_dispatch(getenv("REQUEST_URI"));
     }
 
     return 0;

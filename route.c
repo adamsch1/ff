@@ -64,7 +64,7 @@ static void load_controller( const char *fp )  {
   controllers = node;
 }
 
-int route_dispatch( const char *uri)  {
+int route_dispatch( char *uri)  {
   return route_invoke( uri, controllers );
 }
 

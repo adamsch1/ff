@@ -1,0 +1,90 @@
+
+
+ff expects a directory layout like:
+
+mods/ The ff controllers, which are .so
+ff    The fastCGI app itself
+
+
+You setup the fastCGI via the following command:
+
+cd /your/website
+spawn-fcgi -f ./ff -p 2000 -a 127.0.0.1 -C 8
+
+This tells ff to bind to the loopback, 127.0.0.1 listening to port 2000.  I
+forget what C means, read the man page.
+
+I am using lighttpd for development as it's easier for me to configure
+than apache.  Here is my complete conf file for lighttpd.  Put it in a file,
+I call fastCGI.conf.  Then you can run lighttpd via 
+
+lighttpd -f ./fastCGI.conf
+
+############################################################################
+# FastCGI conf file for lighttpd
+server.modules += ( "mod_fastcgi" )
+
+server.port = 6969
+server.document-root = "/home/shane/projects/ff"
+
+fastcgi.server = (
+  "/" => ((
+    "host" => "127.0.0.1",
+    "port" => "2000",
+    "check-local" => "disable"
+  ))
+)
+############################################################################
+
+This config file tells lighttpd to bind to port 6969 and as you can see we
+instruct it to contact the fastcgi server on port 127.0.0.1:2000.  The 
+biggest pain in the ass was discovering the "check-local" command which
+tells lighttpd to really send ALL requests to the fastCGI
+application.  I tried url rewrite but could not get it to work.
+
+Now with this configuration *any* web request to http://127.0.0.1:6969 will
+go to our ff program.
+
+
+How it works:
+
+main.c is the main src file.  It gets compiled to ff, which is the main
+application.  It's first job is to dynamically load all .so in the mods
+sub-directory.  It looks for *one* symbol therein, called head.  This 
+symbol is really an array of struct ff_controller_t entries.  
+
+/* From ff.h */
+struct ff_controller_t {
+  char * route;
+  void (*ptr)();
+};
+
+/* From blog.c */
+struct ff_controller_t head[] = {
+  { "/blog", blog  },
+  { "/comments", comment },
+  { 0 }
+};
+
+As you can see the ff_controller_t struct contains two things, a string to 
+a path, and a pointer to a function.  main simply takes the http request
+and routes the request to the proper function.
+
+You compile blog.c to a .so as follows:
+
+gcc -shared  blog.c -o blog.so
+
+Pretty easy.  Go toss blog.so into the mods subdirectory and it should load.
+
+If you do a:
+
+lynx http://127.0.0.1:6969/blog
+
+The blog function inside blog.so will get executed.  Likewise if you 
+
+lynx http://127.0.0.1:6969/comments
+
+The comment function will get called.  
+
+I realize this is pretty ghetto
+

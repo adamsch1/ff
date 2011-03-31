@@ -31,14 +31,6 @@ main: main.c route.c util.c
 	gcc -o ff -g main.c route.c util.c $(EXTRA_LIBS) $(INC) -Wall
 
 
-all: $(OBJS) src/libcgi.so
-
-	@echo ""
-	@echo ""
-	@echo ""
-	@echo ""
-
-
 shared: src/libcgi.so
 	cp src/libcgi.so $(LIBDIR)
 

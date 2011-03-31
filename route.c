@@ -92,6 +92,9 @@ int route_dispatch( char *uri)  {
 static int route_invoke( const char *uri, struct controller_t *controller )  {
   struct ff_controller_t *head;
 
+  /** No path, most likely invoked form cmd line */
+  if( !uri ) return -1;
+
   /** Once and a while we get to do some recursion **/
   if( controller->next ) {
     route_invoke( uri, controller->next );

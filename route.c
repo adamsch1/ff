@@ -1,4 +1,3 @@
-#include <glib.h>
 #include "route.h"
 #include <stdlib.h>
 #include <string.h>

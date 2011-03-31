@@ -8,7 +8,9 @@ struct timeval difference_time;
 
 /* Subtract the `struct timeval' values X and Y,
    storing the result in RESULT.
-   Return 1 if the difference is negative, otherwise 0.  */
+   Return 1 if the difference is negative, otherwise 0.  
+   Got this from GNU documents for libc
+*/
 
 int
 timeval_diff (result, x, y)

@@ -31,6 +31,7 @@ int main () {
       /* Dispatch the request to the correct controller */
       route_dispatch(getenv("REQUEST_URI"));
 
+      /* Calculate total runtime of the operation */
       gettimeofday(&end_time,NULL);
       timeval_diff( &difference_time, &end_time, &start_time );      
 

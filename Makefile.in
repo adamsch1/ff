@@ -25,7 +25,7 @@ all: main blog
 
 
 blog: blog.c
-	gcc -shared -o controllers/blog.so -c blog.c $(EXTRA_LIBS) $(INC) -Wall
+	gcc -shared blog.c -o controllers/blog.so
 
 main: main.c route.c util.c
 	gcc -o ff -g main.c route.c util.c $(EXTRA_LIBS) $(INC) -Wall

@@ -6,6 +6,16 @@ struct timeval start_time;
 struct timeval end_time;
 struct timeval difference_time;
 
+
+// Make a NULL pointer into a empty string
+char * nully( char * p )  {
+  if( p == NULL )  {
+    p = malloc(1);
+    *p = 0;
+  }
+  return p;
+}
+
 /* Subtract the `struct timeval' values X and Y,
    storing the result in RESULT.
    Return 1 if the difference is negative, otherwise 0.  

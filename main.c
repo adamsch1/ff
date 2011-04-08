@@ -24,8 +24,8 @@ int main () {
             "\r\n"
             "<title>ff test</title>"
             "<h1>Testing basic controller dispatching</h1>\n"
-            "Request number %d,  Process ID: %d<p> %s %s\n", ++count, getpid(),
-							getenv("REQUEST_URI")
+            "Request number %d,  Process ID: %d<p> %s \n", ++count, getpid(),
+							nully(getenv("REQUEST_URI"))
              );
 
       /* Dispatch the request to the correct controller */

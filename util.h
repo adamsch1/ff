@@ -1,6 +1,7 @@
 #ifndef __UTIL__H
 #define __UTIL__H
 
+char * nully( char *);
 long long
 timeval_diff(struct timeval *difference,
              struct timeval *end_time,

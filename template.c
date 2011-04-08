@@ -2,12 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-struct chunk_t {
-  char *text;
-  int  macro: 1;
-  int  isif: 1;
-  struct chunk_t *next;
-};
+#include "template.h"
 
 struct chunk_t * chunk_new( char * text )  {
   struct chunk_t *t = (struct chunk_t*)malloc(sizeof(struct chunk_t));
@@ -72,7 +67,7 @@ struct chunk_t * template_parse( char * source )  {
 
   while( *p )  {
     if( *p == '<' && *(p+1) == '%' )  {
-      /* Open tag but only create a chunk node if its at the first byte */
+      /* Open tag  */
       if( p != start )  {
         /* Grab everthing after the last close tag up to the start tag */
         *p = 0;
@@ -80,9 +75,11 @@ struct chunk_t * template_parse( char * source )  {
         iter = iter->next;
         *p = '<';
       }
+      /* Skip the <% literal and parse the logic inside this tag */
       p += 2;
       temp = parse_logic( &p );
       if( temp )  { 
+        /* valid logic link it in */
         iter->next = temp;
         iter = iter->next;
       }
@@ -98,6 +95,7 @@ struct chunk_t * template_parse( char * source )  {
   return head;
 }
 
+#if 0
 char temp2[] = "<% $dude %> Ouch <html></html>";
 char temp3[] = "<% %> Ouch <html></html>";
 char temp4[] = "<% if $d %> <% $crap %> Ouch <html></html>";
@@ -111,7 +109,7 @@ int main()  {
     t = t->next;
   }
 }
-
+#endif
 
 
 

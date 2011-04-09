@@ -10,6 +10,7 @@
 
 #include "template.h"
 #include "sglib.h"
+#include "ff.h"
 
 /** 
  * Hold stuff about the template
@@ -38,6 +39,20 @@ int template_init()  {
   if( !path )  {
     fprintf(stderr,"Could not get current path: %d\n", errno );
     return -1;
+  }
+}
+
+/**
+ * Load, parse, evaulate, display
+ */
+void template_run( char *path )  {
+  struct chunk_t *chunk = template_load(path);
+
+  printf("Content-type: text/html\r\n\r\n");
+
+  while( chunk )  {
+    printf("%s\n", chunk->text );
+    chunk = chunk->next;
   }
 }
 

@@ -19,14 +19,6 @@ int main () {
       /* Record start time */
       gettimeofday(&start_time,NULL);
 
-      printf("Content-type: text/html\r\n"
-            "\r\n"
-            "<title>ff test</title>"
-            "<h1>Testing basic controller dispatching</h1>\n"
-            "Request number %d,  Process ID: %d<p> %s \n", ++count, getpid(),
-							nully(getenv("REQUEST_URI"))
-             );
-
       /* Dispatch the request to the correct controller */
       route_dispatch(getenv("REQUEST_URI"));
 

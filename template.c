@@ -31,7 +31,6 @@ SGLIB_DEFINE_RBTREE_FUNCTIONS( template, left, right, color_field, COMPARATOR );
 
 
 char *path;
-char finalpath[PATH_MAX];
 template *template_cache = NULL;
 
 int template_init()  {
@@ -58,6 +57,7 @@ struct chunk_t * template_load( char * source )  {
   struct chunk_t *iter;
   template *tp;
   template entry;
+  char finalpath[PATH_MAX];
 
   printf("%d\n", sprintf( finalpath, "%s/%s", path, source ));     
 
@@ -69,11 +69,11 @@ struct chunk_t * template_load( char * source )  {
 
   /* See if we already have this sucker */ 
   entry.path = finalpath;
-  if( sglib_template_find_member( template_cache, &entry ) != NULL )  {
+  if( (tp=sglib_template_find_member( template_cache, &entry )) != NULL )  {
     /* We do if it hasn't modified - exit */
-    if( entry.mtime == st.st_mtime ) return entry.head;
+    if( tp->mtime == st.st_mtime ) return tp->head;
     /* Modified, free old data */
-    iter = entry.head;
+    iter = tp->head;
     while( iter )  {
       chunk = iter;
       iter = iter->next; 
@@ -88,6 +88,7 @@ struct chunk_t * template_load( char * source )  {
       return NULL;
     }
     tp->path = strdup(finalpath);
+    tp->mtime = st.st_mtime;
   }
 
   /* Allocate buffer for the template and read it in from the file */ 

@@ -10,6 +10,10 @@ struct ff_controller_t head[] = {
   { 0 }
 };
 
+void init()  {
+  template_init();
+}
+
 void blog()  {
   struct chunk_t *t = template_load("test.tpl");
   while( t )  {

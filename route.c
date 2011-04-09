@@ -56,6 +56,7 @@ static void load_controller( const char *fp )  {
   void *handle;
   struct ff_controller_t *head;
   struct controller_t *node;
+  void (*initp)();
 
   /* Load the .so */
   handle = dlopen( fp, RTLD_LAZY);
@@ -71,6 +72,14 @@ static void load_controller( const char *fp )  {
     return;
   }
 
+
+  initp = dlsym(handle, "init");
+  if( !initp )  {
+    fprintf(stderr, "Could not find init() in %s\n", fp);
+    return;
+  }
+  initp(); 
+ 
   /* Allocate and link into our list of controllers */
   node = (struct controller_t *)calloc(1,sizeof(struct controller_t));
   node->head = head;

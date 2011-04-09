@@ -7,7 +7,7 @@
 
 #include "ff.h"
 #include "route.h"
-
+#include "template.h"
 
 extern struct timeval start_time, end_time, difference_time;
 int main () {
@@ -15,6 +15,7 @@ int main () {
 
     /* Load the controller .so from this sub directory */
     route_import_controllers("controllers/");
+    template_init();
 
     while (FCGI_Accept() >= 0) {
       /* Record start time */

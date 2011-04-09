@@ -31,7 +31,7 @@ SGLIB_DEFINE_RBTREE_FUNCTIONS( template, left, right, color_field, COMPARATOR );
 
 
 char *path;
-char final[PATH_MAX];
+char finalpath[PATH_MAX];
 template *template_cache = NULL;
 
 int template_init()  {
@@ -55,41 +55,51 @@ struct chunk_t * template_load( char * source )  {
   char ch;
   FILE *fp;
   struct chunk_t *chunk;
+  struct chunk_t *iter;
   template *tp;
   template entry;
 
-  sprintf( final, "%s/%s", path, source );     
+  printf("%d\n", sprintf( finalpath, "%s/%s", path, source ));     
 
   /* Stat file to get the mtime and size */
-  if( stat( final, &st )  < 0 )  {
-    fprintf(stderr,"Could not stat: %s %d\n", final, errno );
+  if( stat( finalpath, &st )  < 0 )  {
+    fprintf(stderr,"Could not stat: %s %d\n", finalpath, errno );
     return NULL;
   }
 
   /* See if we already have this sucker */ 
-  entry.path = final;
+  entry.path = finalpath;
   if( sglib_template_find_member( template_cache, &entry ) != NULL )  {
     /* We do if it hasn't modified - exit */
     if( entry.mtime == st.st_mtime ) return entry.head;
+    /* Modified, free old data */
+    iter = entry.head;
+    while( iter )  {
+      chunk = iter;
+      iter = iter->next; 
+      free(chunk->text);
+      free(chunk);
+    }
+  } else {
+    /* New template */
+    tp = calloc(1, sizeof(template));
+    if( tp == NULL ) { 
+      fprintf(stderr,"Could not allocate memory for template: %s %d\n", finalpath, errno );
+      return NULL;
+    }
+    tp->path = strdup(finalpath);
   }
-  /* New template */
-  tp = calloc(1, sizeof(template));
-  if( tp == NULL ) { 
-    fprintf(stderr,"Could not allocate memory for template: %s %d\n", final, errno );
-    return NULL;
-  }
-  tp->path = strdup(final);
 
   /* Allocate buffer for the template and read it in from the file */ 
   bigbuff = malloc(st.st_size+1);
   if( bigbuff == NULL )  {
-    fprintf(stderr,"Could not allocate memory to read: %s %d\n", final, errno );
+    fprintf(stderr,"Could not allocate memory to read: %s %d\n", finalpath, errno );
     return NULL;
   }  
 
-  fp = fopen( final, "r");
+  fp = fopen( finalpath, "r");
   if( fp == NULL ) { 
-    fprintf(stderr,"Could not open to read: %s %d\n", final, errno );
+    fprintf(stderr,"Could not open to read: %s %d\n", finalpath, errno );
     free(bigbuff);
     return NULL;
   }
@@ -196,7 +206,7 @@ struct chunk_t * template_parse( char * source )  {
   return head;
 }
 
-#if 1
+#if 0
 char temp2[] = "<% $dude %> Ouch <html></html>";
 char temp3[] = "<% %> Ouch <html></html>";
 char temp4[] = "<% if $d %> <% $crap %> Ouch <html></html>";

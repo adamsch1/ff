@@ -1,4 +1,5 @@
 #include "ff.h"
+#include "template.h"
 
 void blog();
 void comment();
@@ -10,6 +11,11 @@ struct ff_controller_t head[] = {
 };
 
 void blog()  {
+  struct chunk_t *t = template_load("test.tpl");
+  while( t )  {
+    printf("%s",t->text);
+    t=t->next;
+  }
 }
 
 void comment() {

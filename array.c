@@ -46,8 +46,8 @@ char * array_get( struct array_t *arr, char *key )  {
  */
 void array_add_str( struct array_t * arr, char *key, char *value )  {
   node *n = calloc(1, sizeof(node));
-  n->key = key;
-  n->value = value;
+  n->key = strdup(key);
+  n->value = strdup(value);
   sglib_node_add( &arr->head, n );
 }
 

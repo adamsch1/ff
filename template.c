@@ -60,6 +60,8 @@ void template_run( char *path, struct array_t *arr )  {
     }
     chunk = chunk->next;
   }
+
+  array_free( arr ); 
 }
 
 struct chunk_t * chunk_new( char * text )  {

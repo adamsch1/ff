@@ -1,3 +1,7 @@
 controllers/*.so
 ff
-
+*.o
+*.a
+*.log
+*.cache
+config.status

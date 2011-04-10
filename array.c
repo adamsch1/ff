@@ -2,9 +2,15 @@
 #include "sglib.h"
 #include <string.h>
 
+#define IS_STR 0x1
+#define IS_OBJ 0x2
+
 typedef struct node_t {
   char *key;
   char *value;
+  void *obj;
+
+  int  bits;
 
   /* Sglib stuff */
   char color_field;
@@ -29,6 +35,21 @@ struct array_t * array_new()  {
 /**
  * Get a named value
  */
+void * array_get_obj( struct array_t *arr, char *key )  {
+  node *n;
+  node entry;
+
+  entry.key = key; 
+  if( (n=sglib_node_find_member( arr->head, &entry )) == NULL ) { 
+    return n->obj;
+  } else {
+    return NULL;
+  }
+}
+
+/**
+ * Get a named value
+ */
 char * array_get( struct array_t *arr, char *key )  {
   node *n;
   node entry;
@@ -42,12 +63,24 @@ char * array_get( struct array_t *arr, char *key )  {
 }
 
 /**
+ *  
+ */
+void array_add_obj( struct array_t *arr, char *key, void *obj ) { 
+  node *n = calloc(1, sizeof(node));
+  n->key = strdup(key);
+  n->obj = obj;
+  n->bits |= IS_OBJ;
+  sglib_node_add( &arr->head, n );
+}
+
+/**
  *  Add string - we take ownership of freeing key/value
  */
 void array_add_str( struct array_t * arr, char *key, char *value )  {
   node *n = calloc(1, sizeof(node));
   n->key = strdup(key);
   n->value = strdup(value);
+  n->bits |= IS_STR;
   sglib_node_add( &arr->head, n );
 }
 

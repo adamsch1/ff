@@ -17,6 +17,7 @@ char * nully( char * p )  {
   return p;
 }
 
+/* Strip trailing / and query params etc */
 char * cleanrequest( char * request_uri )  {
   char * r = strdup( request_uri );
   char *p;
@@ -34,6 +35,7 @@ char * cleanrequest( char * request_uri )  {
   return r;
 }
 
+/* Dump all CGI env variables */
 void dumpcgi()  {
   char **e = environ;
   int k=0;

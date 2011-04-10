@@ -55,22 +55,28 @@ void template_run( char *path, struct array_t *arr )  {
 
   while( chunk )  {
     if( chunk->macro && chunk->isif == 0 )  {
+      /* have macro not an if statement, echo it */
       if( (value=array_get( arr, chunk->text )) != NULL )  {
         printf("%s", value );
       }
     } else if( chunk->isif )  {
+      /* Have an if statement, see if macro evals to true/fales */
       value = array_get( arr, chunk->text );
       if( value == NULL || *value == 0 || *value == '0' )  {
+        /* Its false don't echo anything until we get endif */
         iftrue = 0;  
       } 
     } else if( chunk->endif )  {
+      /* Turn output back on */
       iftrue = 1; 
     } else if( iftrue ) {
+      /* Echo text by default or if last IF statement eval to true  */
       printf("%s", chunk->text );
     }
     chunk = chunk->next;
   }
 
+  /* Free it here to make life easier in controller */
   array_free( arr ); 
 }
 

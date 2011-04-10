@@ -54,9 +54,9 @@ void template_run( char *path, struct array_t *arr )  {
 
   while( chunk )  {
     if( chunk->macro && (value=array_get( arr, chunk->text )) != NULL )  {
-      printf("%s\n", value );
+      printf("%s", value );
     } else {
-      printf("%s\n", chunk->text );
+      printf("%s", chunk->text );
     }
     chunk = chunk->next;
   }

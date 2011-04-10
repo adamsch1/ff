@@ -27,6 +27,21 @@ struct array_t * array_new()  {
 }
 
 /**
+ * Get a named value
+ */
+char * array_get( struct array_t *arr, char *key )  {
+  node *n;
+  node entry;
+
+  entry.key = key; 
+  if( (n=sglib_node_find_member( arr->head, &entry )) == NULL ) { 
+    return NULL;
+  } else {
+    return n->value;
+  }
+}
+
+/**
  *  Add string - we take ownership of freeing key/value
  */
 void array_add_str( struct array_t * arr, char *key, char *value )  {

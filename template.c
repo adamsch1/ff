@@ -48,11 +48,16 @@ int template_init()  {
  */
 void template_run( char *path, struct array_t *arr )  {
   struct chunk_t *chunk = template_load(path);
+  char   *value;
 
   printf("Content-type: text/html\r\n\r\n");
 
   while( chunk )  {
-    printf("%s\n", chunk->text );
+    if( chunk->macro && (value=array_get( arr, chunk->text )) != NULL )  {
+      printf("%s\n", value );
+    } else {
+      printf("%s\n", chunk->text );
+    }
     chunk = chunk->next;
   }
 }

@@ -1,5 +1,6 @@
 #include "ff.h"
 #include "template.h"
+#include "array.h"
 
 void blog();
 void comment();
@@ -15,16 +16,12 @@ void init()  {
 }
 
 void blog()  {
+  struct array_t *arr = array_new();
 
-
-
-  template_run("test.tpl");
+  array_add_str( arr, "dog", "GONZO!"); 
+  template_run("test.tpl", arr);
 }
 
 void comment() {
 }
-
-
-
-
 

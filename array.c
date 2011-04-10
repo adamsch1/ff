@@ -1,26 +1,7 @@
 #include <stdlib.h>
-#include "sglib.h"
 #include <string.h>
-
-#define IS_STR 0x1
-#define IS_OBJ 0x2
-
-typedef struct node_t {
-  char *key;
-  char *value;
-  void *obj;
-
-  int  bits;
-
-  /* Sglib stuff */
-  char color_field;
-  struct node_t *left;
-  struct node_t *right;
-} node;
-
-struct array_t {
-  node *head;
-};
+#include "array.h"
+#include "sglib.h"
 
 #define COMPARATOR(x,y) (strcmp(x->key,y->key))
 SGLIB_DEFINE_RBTREE_PROTOTYPES( node, left, right, color_field, COMPARATOR );
@@ -63,7 +44,7 @@ char * array_get( struct array_t *arr, char *key )  {
 }
 
 /**
- *  
+ * Add obj.  We allocate copy of key  
  */
 void array_add_obj( struct array_t *arr, char *key, void *obj ) { 
   node *n = calloc(1, sizeof(node));
@@ -99,6 +80,22 @@ void array_free( struct array_t *arr ) {
   }
 
   free(arr);
+}
+
+/**
+ * Walk the array, you give the callback
+ */
+void array_walk( struct array_t *arr, void (*callback)(struct array_t *arr, 
+                 int k, node *n ) )  {
+  struct sglib_node_iterator it;
+  node *np;
+  int k=0;
+
+  for( np=sglib_node_it_init(&it, arr->head); np != NULL; 
+    np=sglib_node_it_next(&it),k++)  {
+    callback( arr, k, np );
+  }
+  
 }
 
 #if 0

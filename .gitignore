@@ -5,3 +5,4 @@ ff
 *.log
 *.cache
 config.status
+a.out

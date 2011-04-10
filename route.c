@@ -47,6 +47,8 @@ void route_import_controllers( const char *path )  {
       load_controller( str );
     }
   }
+
+  closedir(dir);
 }
 
 /**

@@ -6,13 +6,13 @@ prefix = @prefix@
 exec_prefix = @exec_prefix@
 
 SHAREDOPT = -shared
-LIBDIR = $(prefix)/lib
+LIBDIR = $(prefix)/lib .
 INCDIR = $(prefix)/include
 MANDIR	= $(prefix)/man/man3
 SHELL = /bin/sh
 EXTRA_LIBS = -lfcgi -ldl -lz
 
-INCS =  -Isrc
+INC = -I .
 FLAGS = -Wall -fpic
 
 OBJS = *.o
@@ -21,57 +21,28 @@ OBJS = *.o
 
 INC = -L/usr/local/lib -L/usr/lib -I/usr/include/glib-2.0/  -I/usr/lib/glib-2.0/include
 
-all: main blog
-
+all: main libff.a blog
 
 blog: blog.c
-	gcc -shared blog.c -o controllers/blog.so
+	gcc -shared blog.c -lff -o controllers/blog.so -L .
 
 main: main.c route.c util.c
 	gcc -o ff -g main.c route.c util.c $(EXTRA_LIBS) $(INC) -Wall
 
+libff.a: ccgi.o template.o array.o $(CRYPT)
+	ar r libff.a ccgi.o template.o array.o $(CRYPT)
+	ranlib libff.a
 
-shared: src/libcgi.so
-	cp src/libcgi.so $(LIBDIR)
+ccgi.o: ccgi.c ccgi.h
 
-src/libcgi.a: $(OBJS)
-	$(AR) rc src/libcgi.a $(OBJS)
+prefork.o: prefork.c
 
-src/libcgi.so: src/libcgi.a
-	$(CC) $(SHAREDOPT) -o src/libcgi.so $(OBJS) $(EXTRA_LIBS)
+crypt.o: crypt.c ccgi.h
 
-install:
-	cp src/libcgi.a $(LIBDIR)
-	cp src/libcgi.so $(LIBDIR)
-	cp src/cgi.h $(INCDIR)
-	cp src/session.h $(INCDIR)
-
-
-src/error.o: src/error.c src/error.h
-src/cgi.o: src/cgi.c src/cgi.h
-src/session.o: src/session.c src/session.h
-src/base64.o: src/base64.c
-src/md5.o: src/md5.c
-src/string.o: src/string.c
-src/cookie.o: src/cookie.c
-src/general.o: src/general.c
-src/list.o: src/list.c
+test: libccgi.a
+	cd t; make
 
 clean:
 	find ./ -name '*.*o' -exec rm -f {} \;
 	find ./ -name '*.a' -exec rm -f {} \;
-
-uninstall: clean
-	rm -f $(LIBDIR)/libcgi.*
-	rm -f $(INCDIR)/cgi.h
-	rm -f $(INCDIR)/session.h
-	rm -f $(MANDIR)/libcgi*
-
-install_man:
-	cp doc/man/man3/libcgi_base64.3 $(MANDIR)
-	cp doc/man/man3/libcgi_cgi.3 $(MANDIR)
-	cp doc/man/man3/libcgi_general.3 $(MANDIR)
-	cp doc/man/man3/libcgi_string.3 $(MANDIR)
-	cp doc/man/man3/libcgi_session.3 $(MANDIR)
-	cp doc/man/man3/libcgi_cookie.3 $(MANDIR)
 

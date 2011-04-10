@@ -115,7 +115,8 @@ static int route_invoke( const char *uri, struct controller_t *controller )  {
   head = controller->head;  
   while( head && head->route )  {
     /* Check if there is a match */
-    if( strstr( uri, head->route ) == uri )  {
+//    if( strstr( uri, head->route ) == uri )  {
+    if( strcmp( uri, head->route ) == 0 )  {
       /* There is so invoke the controller function */
       head->ptr();
       return 0;

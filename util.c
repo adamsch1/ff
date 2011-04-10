@@ -1,11 +1,12 @@
 #include <unistd.h>
 #include <stdlib.h>
-
+#include <fcgi_stdio.h>
+#include <string.h>
 
 struct timeval start_time;
 struct timeval end_time;
 struct timeval difference_time;
-
+extern char **environ;
 
 // Make a NULL pointer into a empty string
 char * nully( char * p )  {
@@ -14,6 +15,35 @@ char * nully( char * p )  {
     *p = 0;
   }
   return p;
+}
+
+char * cleanrequest( char * request_uri )  {
+  char * r = strdup( request_uri );
+  char *p;
+
+  /* Cut past query params */
+  p = strchr( r, '?' );
+  if( p ) *p = 0;
+  else return r;
+
+  /* Strip trailing slash */
+  if( p != r && *(p-1) == '/' )  {
+    *(p-1) = 0;
+  }
+ 
+  return r;
+}
+
+void dumpcgi()  {
+  char **e = environ;
+  int k=0;
+
+  printf("Content-type: text/html\r\n\r\n");
+
+  while( e[k] )  { 
+    printf( "CGI: %s\n", e[k] );
+    k++;
+  }
 }
 
 /* Subtract the `struct timeval' values X and Y,
@@ -47,3 +77,8 @@ timeval_diff (result, x, y)
   return x->tv_sec < y->tv_sec;
 }
 
+#if 0
+void main()  {
+  dump_cgi();
+}
+#endif

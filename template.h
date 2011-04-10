@@ -7,6 +7,7 @@ struct chunk_t {
   char *text;
   int  macro: 1;
   int  isif: 1;
+  int  endif: 1;
   struct chunk_t *next;
 };
 

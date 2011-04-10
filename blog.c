@@ -19,6 +19,7 @@ void blog()  {
   struct array_t *arr = array_new();
 
   array_add_str( arr, "dog", "GONZO!"); 
+  array_add_str( arr, "house", "sucks"); 
   template_run("test.tpl", arr);
 }
 

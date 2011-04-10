@@ -49,13 +49,23 @@ int template_init()  {
 void template_run( char *path, struct array_t *arr )  {
   struct chunk_t *chunk = template_load(path);
   char   *value;
+  int    iftrue = 1;
 
   printf("Content-type: text/html\r\n\r\n");
 
   while( chunk )  {
-    if( chunk->macro && (value=array_get( arr, chunk->text )) != NULL )  {
-      printf("%s", value );
-    } else {
+    if( chunk->macro && chunk->isif == 0 )  {
+      if( (value=array_get( arr, chunk->text )) != NULL )  {
+        printf("%s", value );
+      }
+    } else if( chunk->isif )  {
+      value = array_get( arr, chunk->text );
+      if( value == NULL || *value == 0 || *value == '0' )  {
+        iftrue = 0;  
+      } 
+    } else if( chunk->endif )  {
+      iftrue = 1; 
+    } else if( iftrue ) {
       printf("%s", chunk->text );
     }
     chunk = chunk->next;
@@ -65,8 +75,8 @@ void template_run( char *path, struct array_t *arr )  {
 }
 
 struct chunk_t * chunk_new( char * text )  {
-  struct chunk_t *t = (struct chunk_t*)malloc(sizeof(struct chunk_t));
-  t->text = strdup(text);
+  struct chunk_t *t = (struct chunk_t*)calloc(1,sizeof(struct chunk_t));
+  if( text ) t->text = strdup(text);
   t->next = 0;
 }
 
@@ -100,7 +110,7 @@ struct chunk_t * template_load( char * source )  {
     while( iter )  {
       chunk = iter;
       iter = iter->next; 
-      free(chunk->text);
+      if( chunk->text ) free(chunk->text);
       free(chunk);
     }
   } else {
@@ -153,6 +163,7 @@ struct chunk_t * parse_logic( char ** them )  {
   char *p = *them;
   char *start;
   int have_if = 0;
+  int have_endif = 0;
   struct chunk_t * chunk=NULL;
   char ch;
   while( *p )  {
@@ -185,6 +196,12 @@ struct chunk_t * parse_logic( char ** them )  {
       have_if = 1;
       p+=2; 
       continue;     
+    } else if( strncmp( p, "endif", 5 ) == 0 )  {
+      /* close boolean logic */
+      chunk = chunk_new( NULL );
+      chunk->endif  = 1;
+      return chunk;
+      p+=5; 
     }
     p++; 
   } 
@@ -230,13 +247,14 @@ struct chunk_t * template_parse( char * source )  {
   return head;
 }
 
-#if 0
+#if 1
 char temp2[] = "<% $dude %> Ouch <html></html>";
 char temp3[] = "<% %> Ouch <html></html>";
 char temp4[] = "<% if $d %> <% $crap %> Ouch <html></html>";
 char temp1[] = " if $d %>";
 int main()  {
   struct chunk_t *t;
+  struct array_t *arr = array_new();
 
   template_init();
 
@@ -247,11 +265,9 @@ int main()  {
     t = t->next;
   }
 
-  t = template_load("test.tpl");
-  while( t )  {
-    printf("{%s} ismacro: %x isif: %x\n", t->text, t->macro!=0, t->isif!=0);
-    t = t->next;
-  }
+  array_add_str( arr, "dog", "GONZO!");
+//  array_add_str( arr, "house", "doctor!");
+  template_run("test.tpl", arr);
 }
 #endif
 

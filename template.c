@@ -9,6 +9,7 @@
 #include <time.h>
 
 #include "template.h"
+#include "array.h"
 #include "sglib.h"
 #include "ff.h"
 
@@ -45,7 +46,7 @@ int template_init()  {
 /**
  * Load, parse, evaulate, display
  */
-void template_run( char *path )  {
+void template_run( char *path, struct array_t *arr )  {
   struct chunk_t *chunk = template_load(path);
 
   printf("Content-type: text/html\r\n\r\n");

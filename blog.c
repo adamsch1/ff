@@ -47,9 +47,9 @@ void blog_post() {
   printf("Content-type: text/html\r\n\r\n");
  
   form_set_rule( form, "email", "Email", RULE_REQUIRED|RULE_EMAIL )  ;
-  form_set_rule( form, "email", "Email", RULE_REQUIRED );
 
   if( form_validate( form ) )  {
+    printf("Not validated\n");
   } else {
   }
 

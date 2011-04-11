@@ -6,3 +6,4 @@ ff
 *.cache
 config.status
 a.out
+Makefile

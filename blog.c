@@ -3,15 +3,18 @@
 #include "array.h"
 #include "ccgi.h"
 #include "util.h"
+#include "form.h"
 
 void blog();
 void comment();
+void blog_post();
 
 /**
  * Tell ff what we provide
  */
 struct ff_controller_t head[] = {
   { "/blog", blog  },
+  { "/blog/post", blog_post },
   { "/blog/comments", comment },
   { 0 }
 };
@@ -31,12 +34,26 @@ void init()  {
  */
 void blog()  {
   struct array_t *arr = array_new();
-
-
+ 
   array_add_str( arr, "dog", "GONZO!"); 
   array_add_str( arr, "house", "sucks"); 
   template_run("test.tpl", arr);
   comment();
+}
+
+void blog_post() {
+  struct form_t *form = form_new();
+
+  printf("Content-type: text/html\r\n\r\n");
+ 
+  form_set_rule( form, "email", "Email", RULE_REQUIRED|RULE_EMAIL )  ;
+  form_set_rule( form, "email", "Email", RULE_REQUIRED );
+
+  if( form_validate( form ) )  {
+  } else {
+  }
+
+  form_free( form );
 }
 
 void comment() {

@@ -19,9 +19,12 @@ char * nully( char * p )  {
 
 /* Strip trailing / and query params etc */
 char * cleanrequest( char * request_uri )  {
-  char * r = strdup( request_uri );
+  char * r;
   char *p;
 
+  if( !request_uri ) return NULL;
+
+  r = strdup(request_uri);
   /* Cut past query params */
   p = strchr( r, '?' );
   if( p ) *p = 0;

@@ -4,9 +4,7 @@
 #include "sglib.h"
 
 #define COMPARATOR(x,y) (strcmp(x->key,y->key))
-SGLIB_DEFINE_RBTREE_PROTOTYPES( node, left, right, color_field, COMPARATOR );
 SGLIB_DEFINE_RBTREE_FUNCTIONS( node, left, right, color_field, COMPARATOR );
-
 
 struct array_t * array_new()  {
   struct array_t *arr = calloc(1,sizeof(struct array_t));
@@ -81,6 +79,18 @@ void array_free( struct array_t *arr ) {
 
   free(arr);
 }
+
+node * array_first( struct array_t *arr )  {
+  node *np;
+
+  np = sglib_node_it_init(&arr->it, arr->head);
+  return np;
+}
+
+node * array_next( struct array_t *arr )  {
+  return sglib_node_it_next(&arr->it);
+}
+
 
 /**
  * Walk the array, you give the callback

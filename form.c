@@ -13,20 +13,33 @@
 struct rule_t {
   char *display_name;
   int rule;
+  int ival;
+  float fval;
 };
+
+static struct rule_t * add_rule( struct form_t *form, char *field_name, 
+                                      char *display_name, int rule );
 
 int check_and_set_required( struct form_t *form, struct rule_t *rule, 
                              node * np  );
+
 int check_and_set_email( struct form_t *form, struct rule_t *rule,
                          node *np );
 
+int check_and_set_iminmax( struct form_t *form, struct rule_t *rule,
+                           node *np );
+
+int check_and_set_fminmax( struct form_t *form, struct rule_t *rule,
+                           node *np );
 /* All the canned rules */
 struct rules_t {
   int check_flag;
   int (*checkf)( struct form_t *form, struct rule_t *rule, node *np );
 } rules[] = {
   { RULE_REQUIRED, check_and_set_required },
-  { RULE_EMAIL, check_and_set_email }
+  { RULE_EMAIL, check_and_set_email },
+  { RULE_IMIN|RULE_IMAX, check_and_set_iminmax },
+  { RULE_FMIN|RULE_FMAX, check_and_set_fminmax }
 };
 
 #define RULE_COUNT (sizeof( rules)/sizeof(struct rules_t))
@@ -36,13 +49,46 @@ struct rules_t {
  * Give field name, display name for errors and a | deliminted set of rules
  * when I figure out what those are I'll document them
  */
+void form_set_rule_fval( struct form_t *form, char *field_name, 
+                         char *display_name, int rule, float val )  {
+
+  struct rule_t * r = add_rule( form, field_name, display_name, rule );
+  r->fval = val;
+}
+
+/**
+ * Give field name, display name for errors and a | deliminted set of rules
+ * when I figure out what those are I'll document them
+ */
+void form_set_rule_ival( struct form_t *form, char *field_name, 
+                         char *display_name, int rule, int val )  {
+
+  struct rule_t * r = add_rule( form, field_name, display_name, rule );
+  r->ival = val;
+}
+
+/**
+ * Give field name, display name for errors and a | deliminted set of rules
+ * when I figure out what those are I'll document them
+ */
 void form_set_rule( struct form_t *form, char *field_name, char *display_name, 
                     int rule )  {
+
+  add_rule( form, field_name, display_name, rule );
+}
+
+/**
+ * Give field name, display name for errors and a | deliminted set of rules
+ * when I figure out what those are I'll document them
+ */
+static struct rule_t * add_rule( struct form_t *form, char *field_name, 
+                                      char *display_name, int rule )  {
 
   struct rule_t * r = calloc(1,sizeof(struct rule_t));
   r->display_name = strdup(display_name);
   r->rule = rule;
   array_add_obj( form->arr, field_name, r );
+  return r;
 }
 
 /**
@@ -59,6 +105,52 @@ int errors=0;
 
 #define CHECK( r, f ) ( r->rule & f )
 
+
+int check_and_set_fminmax( struct form_t *form, struct rule_t *rule,
+                           node *np )  {
+  char buff[255];
+  const char * value = CGI_lookup( form->cgi, np->key );
+  float val;
+
+  if( !value ) return 0;
+
+  val = atof( value );
+
+  if( CHECK( rule, RULE_IMIN ) && val < rule->fval ) {
+    sprintf( buff, "%s is too small", rule->display_name );
+    array_add_str( form->err, np->key, buff );
+    return 1;
+  } else if( CHECK( rule, RULE_IMAX ) && val > rule->fval )  {
+    sprintf( buff, "%s is too large", rule->display_name );
+    array_add_str( form->err, np->key, buff );
+    return 1;
+  }
+ 
+  return 0; 
+}
+
+int check_and_set_iminmax( struct form_t *form, struct rule_t *rule,
+                           node *np )  {
+  char buff[255];
+  const char * value = CGI_lookup( form->cgi, np->key );
+  int val;
+
+  if( !value ) return 0;
+
+  val = atoi( value );
+
+  if( CHECK( rule, RULE_IMIN ) && val < rule->ival ) {
+    sprintf( buff, "%s is too small", rule->display_name );
+    array_add_str( form->err, np->key, buff );
+    return 1;
+  } else if( CHECK( rule, RULE_IMAX ) && val > rule->ival )  {
+    sprintf( buff, "%s is too large", rule->display_name );
+    array_add_str( form->err, np->key, buff );
+    return 1;
+  }
+ 
+  return 0; 
+}
 
 int check_and_set_required( struct form_t *form, struct rule_t *rule, 
                              node * np  )  {

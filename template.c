@@ -12,6 +12,7 @@
 #include "array.h"
 #include "sglib.h"
 #include "ff.h"
+#include "form.h"
 
 /** 
  * Hold stuff about the template
@@ -44,12 +45,37 @@ int template_init()  {
 }
 
 /**
+ * Load, parse, evaulate, display, with a form
+ */
+void template_run_form( char *path, struct form_t *form, 
+                        struct array_t *them ) { 
+  struct array_t *arr = array_new();
+  node *n;
+ 
+  if( array_empty( form->err) )  {
+    array_add_obj( arr, "errors", form->err );
+  }
+
+  for( n=array_first( form->arr ); n != NULL; n = array_next( form->arr ) ) { 
+    array_add_str( arr, n->key, n->key ); 
+  }
+
+  template_run( path, arr );
+
+  array_free(arr);   
+}
+
+/**
  * Load, parse, evaulate, display
  */
 void template_run( char *path, struct array_t *arr )  {
   struct chunk_t *chunk = template_load(path);
   char   *value;
   int    iftrue = 1;
+  int    freeit = 1;
+
+  if( arr == NULL ) arr = array_new();
+  else freeit = 0;
 
   printf("Content-type: text/html\r\n\r\n");
 
@@ -77,7 +103,7 @@ void template_run( char *path, struct array_t *arr )  {
   }
 
   /* Free it here to make life easier in controller */
-  array_free( arr ); 
+  if( freeit ) array_free( arr ); 
 }
 
 struct chunk_t * chunk_new( char * text )  {
@@ -253,7 +279,7 @@ struct chunk_t * template_parse( char * source )  {
   return head;
 }
 
-#if 1
+#if 0
 char temp2[] = "<% $dude %> Ouch <html></html>";
 char temp3[] = "<% %> Ouch <html></html>";
 char temp4[] = "<% if $d %> <% $crap %> Ouch <html></html>";

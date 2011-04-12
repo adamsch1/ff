@@ -21,7 +21,7 @@ int main () {
       /* Record start time */
       gettimeofday(&start_time,NULL);
 
-      //dumpcgi();
+//      dumpcgi();
 
       /* Dispatch the request to the correct controller */
       request_uri = cleanrequest( getenv("REQUEST_URI"));
@@ -37,4 +37,3 @@ int main () {
 
     return 0;
 }
-

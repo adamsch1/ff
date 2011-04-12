@@ -1,11 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <fcgi_stdio.h>
 #include <regex.h>
 #include "form.h"
 #include "array.h"
 #include "ccgi.h"
+#include <fcgi_stdio.h>
 
 /**
  * Heavily inspired by Codeigniter which I like alot.
@@ -31,6 +31,9 @@ int check_and_set_iminmax( struct form_t *form, struct rule_t *rule,
 
 int check_and_set_fminmax( struct form_t *form, struct rule_t *rule,
                            node *np );
+
+int check_and_set_sminmax( struct form_t *form, struct rule_t *rule,
+                           node *np );
 /* All the canned rules */
 struct rules_t {
   int check_flag;
@@ -39,7 +42,8 @@ struct rules_t {
   { RULE_REQUIRED, check_and_set_required },
   { RULE_EMAIL, check_and_set_email },
   { RULE_IMIN|RULE_IMAX, check_and_set_iminmax },
-  { RULE_FMIN|RULE_FMAX, check_and_set_fminmax }
+  { RULE_FMIN|RULE_FMAX, check_and_set_fminmax },
+  { RULE_SMIN|RULE_SMAX|RULE_SEXACT, check_and_set_sminmax }
 };
 
 #define RULE_COUNT (sizeof( rules)/sizeof(struct rules_t))
@@ -61,6 +65,17 @@ void form_set_rule_fval( struct form_t *form, char *field_name,
  * when I figure out what those are I'll document them
  */
 void form_set_rule_ival( struct form_t *form, char *field_name, 
+                         char *display_name, int rule, int val )  {
+
+  struct rule_t * r = add_rule( form, field_name, display_name, rule );
+  r->ival = val;
+}
+
+/**
+ * Give field name, display name for errors and a | deliminted set of rules
+ * when I figure out what those are I'll document them
+ */
+void form_set_rule_sval( struct form_t *form, char *field_name, 
                          char *display_name, int rule, int val )  {
 
   struct rule_t * r = add_rule( form, field_name, display_name, rule );
@@ -105,6 +120,32 @@ int errors=0;
 
 #define CHECK( r, f ) ( r->rule & f )
 
+int check_and_set_sminmax( struct form_t *form, struct rule_t *rule,
+                           node *np )  {
+  char buff[255];
+  const char * value = CGI_lookup( form->cgi, np->key );
+  float val;
+
+  if( !value ) return 0;
+
+  val = strlen( value );
+
+  if( CHECK( rule, RULE_SMIN ) && val < rule->ival ) {
+    sprintf( buff, "%s is too small", rule->display_name );
+    array_add_str( form->err, np->key, buff );
+    return 1;
+  } else if( CHECK( rule, RULE_SMAX ) && val > rule->ival )  {
+    sprintf( buff, "%s is too large", rule->display_name );
+    array_add_str( form->err, np->key, buff );
+    return 1;
+  } else if( CHECK( rule, RULE_SEXACT ) && val != rule->ival )  {
+    sprintf( buff, "%s is not %d long", rule->display_name, rule->ival );
+    array_add_str( form->err, np->key, buff );
+    return 1;
+  }
+ 
+  return 0; 
+}
 
 int check_and_set_fminmax( struct form_t *form, struct rule_t *rule,
                            node *np )  {
@@ -166,6 +207,31 @@ int check_and_set_required( struct form_t *form, struct rule_t *rule,
   return 0; 
 }
 
+int check_and_set_alphanumeric( struct form_t *form, struct rule_t *rule,
+                                node *np ) { 
+  static regex_t re;
+  static compiled=0;
+  char buff[255];
+  const char * value;
+
+  if( compiled == 0 ) { 
+    /* Codeigniter */
+    regcomp(&re,"^([a-z0-9])+$", 
+            REG_EXTENDED|REG_ICASE|REG_NOSUB );
+    compiled = 1;
+  }
+
+  value = CGI_lookup( form->cgi, np->key );
+  if( !value || regexec(&re, value, 0, NULL, 0 ) != 0 )   {
+    sprintf( buff, "%s can only consist of letters and numbers", 
+             rule->display_name );
+    array_add_str( form->err, np->key, buff );
+    return 1;
+  }
+
+  return 0; 
+}
+
 int check_and_set_email( struct form_t *form, struct rule_t *rule,
                          node *np ) { 
   static regex_t re;
@@ -182,7 +248,6 @@ int check_and_set_email( struct form_t *form, struct rule_t *rule,
 
   value = CGI_lookup( form->cgi, np->key );
   if( !value || regexec(&re, value, 0, NULL, 0 ) != 0 )   {
-//  if( !value || strchr( value, '@') == NULL ) {
     sprintf( buff, "%s is not a valid email address", rule->display_name );
     array_add_str( form->err, np->key, buff );
     return 1;
@@ -193,7 +258,7 @@ int check_and_set_email( struct form_t *form, struct rule_t *rule,
 
 /**
  * Validate the form - applies each rule, cleans up input etc.
- * returns 0 on success, 1 if failure;
+ * returns 1 on success, 0 if failure;
  */
 int form_validate( struct form_t *form )  {
   node *np;
@@ -202,8 +267,10 @@ int form_validate( struct form_t *form )  {
   int k;
 
   /* Prep form */ 
-  form->cgi = CGI_get_all(NULL); 
+  form->cgi = CGI_get_post(NULL,NULL); 
   form->success = 0;
+
+  if( form->cgi == NULL ) return 0;
 
   /* Iterate across all the rules */
   np = array_first( form->arr );
@@ -221,7 +288,7 @@ int form_validate( struct form_t *form )  {
     np = array_next( form->arr );
   }  
 
-  return form->success;
+  return !form->success;
 }
 
 /**

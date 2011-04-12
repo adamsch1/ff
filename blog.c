@@ -4,6 +4,7 @@
 #include "ccgi.h"
 #include "util.h"
 #include "form.h"
+#include <stdlib.h>
 
 void blog();
 void comment();
@@ -34,23 +35,23 @@ void init()  {
  */
 void blog()  {
   struct array_t *arr = array_new();
- 
-  array_add_str( arr, "dog", "GONZO!"); 
-  array_add_str( arr, "house", "sucks"); 
+
   template_run("test.tpl", arr);
-  comment();
 }
 
 void blog_post() {
   struct form_t *form = form_new();
 
-  printf("Content-type: text/html\r\n\r\n");
- 
   form_set_rule( form, "email", "Email", RULE_REQUIRED|RULE_EMAIL )  ;
+  form_set_rule_sval( form, "password", "Password", 
+                      RULE_REQUIRED|RULE_SMIN, 6 );
 
+  printf("Content-type: text/html\r\n\r\n");
   if( form_validate( form ) )  {
-    printf("Not validated\n");
+    template_run( "test.tpl", 0 );
+    printf("<b>Success:</b><br> \n");
   } else {
+    template_run_form( "test.tpl", form, 0 );
   }
 
   form_free( form );
@@ -62,9 +63,9 @@ void comment() {
   const char *name;
   int k;
 
-  printf("Content-type: text/html\r\n\r\n");
 
-  varlist = CGI_get_all(0);
+  varlist = CGI_get_post(0,0);
+  printf("Content-type: text/html\r\n\r\n");
   if( varlist ) { 
     for( name=CGI_first_name(varlist); name != 0; 
          name=CGI_next_name(varlist))  {

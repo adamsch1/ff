@@ -11,6 +11,10 @@ struct array_t * array_new()  {
   return arr;
 }
 
+int array_empty( struct array_t *arr )  {
+  return arr->head == NULL ;
+}
+
 /**
  * Get a named value
  */

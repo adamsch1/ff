@@ -9,6 +9,9 @@
 #define RULE_IMAX     BITNUM(3)
 #define RULE_FMIN     BITNUM(4)
 #define RULE_FMAX     BITNUM(5)
+#define RULE_SMIN     BITNUM(6)
+#define RULE_SMAX     BITNUM(7)
+#define RULE_SEXACT   BITNUM(8)
 
 #include "array.h"
 #include "ccgi.h"
@@ -25,6 +28,8 @@ void form_set_rule( struct form_t *form, char *field_name, char *display_name,
                     int rule );
 void form_set_rule_ival( struct form_t *form, char *field_name, char *display_name, int rule, int val );
 void form_set_rule_fval( struct form_t *form, char *field_name, char *display_name, int rule, float val );
+void form_set_rule_sval( struct form_t *form, char *field_name, char *display_name, int rule, int val );
+int form_validate( struct form_t *form );
 int form_validate( struct form_t *form );
 int form_validate( struct form_t *form );
 int form_free( struct form_t *form );

@@ -24,7 +24,7 @@ INC = -L/usr/local/lib -L/usr/lib -I/usr/include/glib-2.0/  -I/usr/lib/glib-2.0/
 all: main libff.a blog
 
 blog: blog.c
-	gcc -shared blog.c -lff $(FLAGS) -o controllers/blog.so -L .
+	gcc -shared -g blog.c -lff $(FLAGS) -o controllers/blog.so -L .
 
 main: main.c route.c util.c
 	gcc -o ff -g main.c route.c util.c $(EXTRA_LIBS) $(INC) -Wall

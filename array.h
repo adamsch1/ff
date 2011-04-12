@@ -37,6 +37,7 @@ void array_add_str( struct array_t *arr, char *key, char *value );
 void array_free( struct array_t *arr );
 char * array_get( struct array_t *arr, char *key );
 void * array_get_obj( struct array_t *arr, char *key );
+int array_empty( struct array_t *arr );
 
 /* Iterator support */
 node * array_first( struct array_t *arr );

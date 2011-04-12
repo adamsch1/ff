@@ -265,11 +265,13 @@ int form_validate( struct form_t *form )  {
   const char *vp;
   struct rule_t *rule;
   int k;
+  int errors = 0;
 
   /* Prep form */ 
   form->cgi = CGI_get_post(NULL,NULL); 
   form->success = 0;
 
+  
   if( form->cgi == NULL ) return 0;
 
   /* Iterate across all the rules */
@@ -281,14 +283,15 @@ int form_validate( struct form_t *form )  {
     /* Run all the rules that match */
     for( k=0; k<RULE_COUNT; k++ )  {
       if( CHECK( rule, rules[k].check_flag ) ) {
-        form->success |= rules[k].checkf( form, rule, np );
+        errors |= rules[k].checkf( form, rule, np );
       }
     }
 
     np = array_next( form->arr );
   }  
 
-  return !form->success;
+  form->success = (errors == 0);
+  return form->success;
 }
 
 /**

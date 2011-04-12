@@ -51,8 +51,9 @@ void template_run_form( char *path, struct form_t *form,
                         struct array_t *them ) { 
   struct array_t *arr = array_new();
   node *n;
- 
-  if( array_empty( form->err) )  {
+
+  /* If not empty we validated */ 
+  if( ! array_empty( form->err) )  {
     array_add_obj( arr, "errors", form->err );
   }
 

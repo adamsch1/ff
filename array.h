@@ -35,7 +35,9 @@ struct array_t {
 struct array_t * array_new();
 void array_add_str( struct array_t *arr, char *key, char *value );
 void array_free( struct array_t *arr );
+node * array_get_node( struct array_t *arr, char *key );
 char * array_get( struct array_t *arr, char *key );
+char * array_get_macro( struct array_t *arr, char *key );
 void * array_get_obj( struct array_t *arr, char *key );
 int array_empty( struct array_t *arr );
 

@@ -67,6 +67,25 @@ void template_run_form( char *path, struct form_t *form,
 }
 
 /**
+ * Walk the key, recall we break a key with . into a set of subkeys
+ * isolated by \0
+ */
+char * walk_macro( struct array_t *arr, char *key )  {
+  node *n = array_get_node( arr, key );
+  char *p = key;
+
+  while( n )  {
+    p += strlen( key ) + 1;
+    if( p )  {
+      n = array_get_node( n->obj, p );   
+    } else {
+      /* Nothing else to walk */
+      return n->value;
+    }
+  }
+}
+
+/**
  * Load, parse, evaulate, display
  */
 void template_run( char *path, struct array_t *arr )  {
@@ -83,12 +102,12 @@ void template_run( char *path, struct array_t *arr )  {
   while( chunk )  {
     if( chunk->macro && chunk->isif == 0 )  {
       /* have macro not an if statement, echo it */
-      if( (value=array_get( arr, chunk->text )) != NULL )  {
+      if( (value=array_get_macro( arr, chunk->text )) != NULL )  {
         printf("%s", value );
       }
     } else if( chunk->isif )  {
       /* Have an if statement, see if macro evals to true/fales */
-      value = array_get( arr, chunk->text );
+      value = array_get_macro( arr, chunk->text );
       if( value == NULL || *value == 0 || *value == '0' )  {
         /* Its false don't echo anything until we get endif */
         iftrue = 0;  
@@ -107,6 +126,35 @@ void template_run( char *path, struct array_t *arr )  {
   if( freeit ) array_free( arr ); 
 }
 
+/**
+ *  Macro chunk  - break into subkeys
+ *  For macro,s "." indicates a sub object is expected so 
+ *  to make this easier to walk data structures as a key we convert 
+ *  to \0
+ *  errors.password  becomes  errors\0password\0\0
+ *  allowing us to walk the string for each subkey
+ */
+struct chunk_t * chunk_new_macro( char *text )  {
+  struct chunk_t *t = (struct chunk_t*)calloc(1,sizeof(struct chunk_t));
+  int len;
+  char *p=text;
+  char *d;
+  if( text )  {
+    /* Copy over data with extra space for null and end null */
+    len = strlen(text);
+    d = t->text = malloc(len+2);
+    while( *p )  {
+      *d = *p;
+      if( *d == '.' ) *d = 0;
+      p++; 
+      d++;
+    }
+    *d = *p;
+  }
+  t->next = 0;
+}
+
+/* Regular text chunk */
 struct chunk_t * chunk_new( char * text )  {
   struct chunk_t *t = (struct chunk_t*)calloc(1,sizeof(struct chunk_t));
   if( text ) t->text = strdup(text);
@@ -212,7 +260,7 @@ struct chunk_t * parse_logic( char ** them )  {
       if( !*p ) return NULL;
       ch = *p;
       *p = 0;/* Isolate macro name */
-      chunk = chunk_new( start );
+      chunk = chunk_new_macro( start );
       chunk->macro = 1;
       chunk->isif  = have_if;  
       *p = ch;

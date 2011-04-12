@@ -17,7 +17,7 @@ FLAGS = -Wall -fpic -O3
 CC = gcc
 OBJS = *.o
 
-.c.o: $(CC) $(FLAGS) -c $<
+.c.o: $(CC) -g $(FLAGS) -c -g $<
 
 INC = -L/usr/local/lib -L/usr/lib -I/usr/include/glib-2.0/  -I/usr/lib/glib-2.0/include
 

@@ -16,6 +16,21 @@ int array_empty( struct array_t *arr )  {
 }
 
 /**
+ * Get array node
+ */
+node * array_get_node( struct array_t *arr, char *key) { 
+  node *n;
+  node entry;
+
+  entry.key = key; 
+  if( (n=sglib_node_find_member( arr->head, &entry )) != NULL ) { 
+    return n;
+  } else {
+    return NULL;
+  }
+}
+
+/**
  * Get a named value
  */
 void * array_get_obj( struct array_t *arr, char *key )  {
@@ -25,6 +40,35 @@ void * array_get_obj( struct array_t *arr, char *key )  {
   entry.key = key; 
   if( (n=sglib_node_find_member( arr->head, &entry )) == NULL ) { 
     return n->obj;
+  } else {
+    return NULL;
+  }
+}
+
+/**
+ * Macros could be a list of keys, each terminated by 0 with an 
+ * extra 0 added to terminate the list.
+ */
+char * array_get_macro( struct array_t *arr, char *key )  {
+  node *n;
+  char *p=key;
+  struct array_t *iter;
+
+  n = array_get_node( arr, key );
+  while( p && n && n->bits & IS_OBJ ) { 
+    p += strlen(p)+1;
+    if( p )  {
+      /* More */
+      iter = (struct array_t*)n->obj;
+      n = array_get_node( iter, p );
+    } else {
+      /* Walked the key */
+      return n->value;
+    }  
+  }
+
+  if( n && n->bits & IS_STR )  {
+    return n->value;
   } else {
     return NULL;
   }

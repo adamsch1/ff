@@ -42,6 +42,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <fcgi_stdio.h>
 #include "ccgi.h"
 
 /* CGI_val is an entry in a list of variable values */

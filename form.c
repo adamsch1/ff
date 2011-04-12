@@ -313,6 +313,7 @@ int form_free( struct form_t *form )  {
   array_free( form->arr );
   array_walk( form->err, free_rule );
   array_free( form->err );
+  CGI_free_varlist( form->cgi );
   free(form);
 }
 

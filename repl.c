@@ -10,8 +10,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
-
+#include <limits.h>
+#include <time.h>
 #include "array.h"
+
+struct global_t {
+  int max_file_size;
+} global;
 
 struct repl_t {
   /* Array of struct chunk_file_t */
@@ -23,10 +28,12 @@ struct repl_t {
 
 struct repl_t repl;
 
+/* Everything we need to know about a datafile */
 struct chunk_file_t {
-  int file_id;
+  char *fname;
   int fd;
   off_t offset;
+  long bytes_written;
 };
 
 /* File we are currently writing too, or currently loading from */
@@ -35,7 +42,7 @@ struct chunk_file_t * current_chunk_file ;
 /* K/V we store in memory */
 struct mkeymaster_t {
   time_t ts;
-  int file_id;
+  struct chunk_file_t *file;
   off_t    vpos;
   uint32_t vsize; 
 };
@@ -77,26 +84,28 @@ int repl_append( time_t now, char *key, char *data )  {
 
   rc=writev( current_chunk_file->fd, iov, 3 );
   if( rc == -1 )  {
-    fprintf(stderr, "Could not write to %d, errno=%d\n", 
-            current_chunk_file->file_id, errno );
+    fprintf(stderr, "Could not write to %s, errno=%d, %s\n", 
+            current_chunk_file->fname, errno, strerror(errno) );
     return -1;
   }
 
   attempted_count = iov[0].iov_len + iov[1].iov_len + iov[2].iov_len;
 
   if( rc != attempted_count )  {
-    fprintf(stderr, "Could not write %d bytes, disk full?, errno=%d\n", 
-            current_chunk_file->file_id, errno );
+    fprintf(stderr, "Could not write %s bytes, disk full?, errno=%d\n", 
+            current_chunk_file->fname, errno );
     /* Mark current chunk as corrupted and close it */
     mark_current_file_corrupted();
     return -1;
   }
 
+  current_chunk_file->bytes_written += attempted_count;
+
   mkey = (struct mkeymaster_t *)malloc(sizeof(struct mkeymaster_t));
 
   /* Copy over easy stuff */
   mkey->ts = now;
-  mkey->file_id = current_chunk_file->file_id;
+  mkey->file = current_chunk_file;
 
   /* Length of key with null */
   mkey->vpos = iov[0].iov_len + iov[1].iov_len; 
@@ -107,31 +116,35 @@ int repl_append( time_t now, char *key, char *data )  {
 }
 
 /**
+ * Convenient way to name files, sortable don't have to track a counter etc
+ */
+char * makefilename()  {
+  char buff[PATH_MAX];
+  time_t timer = time(0);
+  struct tm *the_time=localtime(&timer);
+
+  strftime( buff, sizeof(buff), "%Y%m%M%S.data", the_time );
+
+  return strdup(buff);
+}
+
+/**
  * If current file is too big, close it and open another one 
  * This should be seamless and without anyone's strict knowledge. 
  */
 int repl_check_close()  {
+  char buff[PATH_MAX];
 
   if( current_chunk_file == NULL )  {
     struct chunk_file_t *fp =(struct chunk_file_t*)calloc(1, 
       sizeof(struct chunk_file_t));
-
-    if( fp == NULL )  {
-      fprintf(stderr,"Malloc failed: %s:%d\n", __FILE__, __LINE__);
-      return -1;
-    }
-
-    fp->fd = open("logs/1.data",O_APPEND|O_CREAT, 
-                  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-    fp->file_id = 1;
-
-    if( fp->fd == -1 ) { 
-      fprintf(stderr,"Could not open logs/1.data: %s:%d\n", __FILE__, 
-              __LINE__);
-      return -1;
-    }
-
+    char *filename = makefilename();
+    load_chunk( fp, filename );
+    fp->fname = filename;
     current_chunk_file = fp;
+  } else if( current_chunk_file->bytes_written > global.max_file_size )  {
+    current_chunk_file = NULL;
+    return repl_check_close();
   }
 
   /* Always return goodness */
@@ -165,8 +178,8 @@ int repl_init( struct repl_t *r, const char *chunkpath ) {
         fprintf(stderr,"Malloc failed: %s:%d\n", __FILE__, __LINE__);
         return -1;
       }
-      snprintf( buff, PATH_MAX, "chunkpath/%s", dp->d_name );
-      load_chunk( fp, buff );
+      load_chunk( fp, dp->d_name );
+      current_chunk_file = fp;
     }
   }
 
@@ -180,20 +193,51 @@ int repl_init( struct repl_t *r, const char *chunkpath ) {
  * Read through file - create in memory key map
  */
 int load_chunk( struct chunk_file_t *fp, char *fpath )  {
+  char buff[PATH_MAX];
+  struct stat st;
 
-  current_chunk_file = fp;
+  snprintf( buff, sizeof(buff), "logs/%s", fpath );
+  fp->fd = open( buff,O_RDWR | O_APPEND |O_CREAT, 0666 );
+  fp->bytes_written = 0;
+  if( fp->fd == -1 ) { 
+    fprintf(stderr,"Could not open: %s %s:%d\n", buff, __FILE__, 
+            __LINE__);
+    return -1;
+  }
+
+  /* Stat file to get the mtime and size */
+  if( stat( buff, &st )  < 0 )  {
+    fprintf(stderr,"Could not stat: %s %d %s:%d\n", buff, errno, __FILE__,
+            __LINE__ );
+    return -1;
+  }
+
+  fp->bytes_written = st.st_size;
 
   return 0; 
 }
 
 int repl_quit( struct repl_t *r ) {
+  node *n;
+  struct chunk_file_t *cp;
+
+  for( n=array_first( repl.file_chunks ); n != NULL; 
+       n = array_next( repl.file_chunks ) ) { 
+    cp = (struct chunk_file_t *)n->obj;
+    close(cp->fd);
+  }
   return 0; 
 }
 
 int main(int argc, char *argv[])  {
 
-  repl_init( &repl, "logs" );
+  global.max_file_size = 1000;
 
+  repl_init( &repl, "logs" );
+ 
+  repl_append( time(0), "bob", "ross" );
+  repl_append( time(0), "bob", "ross" );
+  repl_append( time(0), "bob", "ross" );
   repl_append( time(0), "bob", "ross" );
   repl_quit( &repl );
 } 

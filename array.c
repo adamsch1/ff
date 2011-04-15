@@ -103,7 +103,7 @@ void array_add_obj( struct array_t *arr, char *key, void *obj ) {
 /**
  *  Add string - we take ownership of freeing key/value
  */
-void array_add_str( struct array_t * arr, char *key, char *value )  {
+void array_add_str( struct array_t * arr, char *key, const char *value )  {
   node *n = calloc(1, sizeof(node));
   n->key = strdup(key);
   n->value = strdup(value);

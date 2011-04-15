@@ -19,6 +19,7 @@
 struct form_t {
   struct array_t *arr;
   struct array_t *err;
+  struct array_t *clean;
   int success;
   CGI_varlist *cgi;
 };

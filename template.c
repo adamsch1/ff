@@ -57,8 +57,10 @@ void template_run_form( char *path, struct form_t *form,
     array_add_obj( arr, "errors", form->err );
   }
 
-  for( n=array_first( form->arr ); n != NULL; n = array_next( form->arr ) ) { 
-    array_add_str( arr, n->key, n->key ); 
+  for( n=array_first( form->clean ); n != NULL; 
+       n = array_next( form->clean ) ) { 
+//    printf("FUCK %s %s\n", n->key, n->value );
+    array_add_str( arr, n->key, nully(n->value) ); 
   }
 
   template_run( path, arr );

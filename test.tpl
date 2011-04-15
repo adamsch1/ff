@@ -10,8 +10,8 @@
 <% endif %>
 
 <form action="http://127.0.0.1:6969/blog/post" method="post">
-  Email <input type="text" name="email"><br>
-  Password <input type="password" name="password"><br>
+  Email <input type="text" name="email" value="<% $email %>"><br>
+  Password <input type="password" name="password" value="<% $password %>"><br>
   <input type="submit" value="Submit">
 </form>
 

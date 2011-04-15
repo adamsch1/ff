@@ -113,6 +113,7 @@ struct form_t * form_new()  {
   struct form_t *form = calloc(1,sizeof(struct form_t));
   form->arr = array_new();
   form->err = array_new();
+  form->clean = array_new();
   return form;
 }
 
@@ -143,7 +144,8 @@ int check_and_set_sminmax( struct form_t *form, struct rule_t *rule,
     array_add_str( form->err, np->key, buff );
     return 1;
   }
- 
+
+  array_add_str( form->clean, np->key, value ); 
   return 0; 
 }
 
@@ -166,6 +168,7 @@ int check_and_set_fminmax( struct form_t *form, struct rule_t *rule,
     array_add_str( form->err, np->key, buff );
     return 1;
   }
+  array_add_str( form->clean, np->key, value ); 
  
   return 0; 
 }
@@ -190,6 +193,7 @@ int check_and_set_iminmax( struct form_t *form, struct rule_t *rule,
     return 1;
   }
  
+  array_add_str( form->clean, np->key, value ); 
   return 0; 
 }
 
@@ -204,6 +208,7 @@ int check_and_set_required( struct form_t *form, struct rule_t *rule,
     return 1;
   }
  
+  array_add_str( form->clean, np->key, value ); 
   return 0; 
 }
 
@@ -229,6 +234,7 @@ int check_and_set_alphanumeric( struct form_t *form, struct rule_t *rule,
     return 1;
   }
 
+  array_add_str( form->clean, np->key, value ); 
   return 0; 
 }
 
@@ -253,6 +259,7 @@ int check_and_set_email( struct form_t *form, struct rule_t *rule,
     return 1;
   }
 
+  array_add_str( form->clean, np->key, value ); 
   return 0; 
 }
 

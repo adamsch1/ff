@@ -51,12 +51,7 @@ void blog_post() {
     template_run( "test.tpl", 0 );
     printf("<b>Success:</b><br> \n");
   } else {
-    node *n;
     template_run_form( "test.tpl", form, 0 );
-
-    for( n=array_first( form->err ); n != NULL; n = array_next( form->err ) ) {
-//      printf("Key%s<br>", n->key );
-    }
   }
 
   form_free( form );

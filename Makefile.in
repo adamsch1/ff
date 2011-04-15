@@ -13,11 +13,11 @@ SHELL = /bin/sh
 EXTRA_LIBS = -lfcgi -ldl -lz
 
 INC = -I .
-FLAGS = -Wall -fpic -O3
+FLAGS = -Wall -fpic -O3 -g
 CC = gcc
 OBJS = *.o
 
-.c.o: $(CC) -g $(FLAGS) -c -g $<
+#.c.o: $(CC) -g $(FLAGS) -c -g $<
 
 INC = -L/usr/local/lib -L/usr/lib -I/usr/include/glib-2.0/  -I/usr/lib/glib-2.0/include
 

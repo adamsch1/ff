@@ -34,6 +34,7 @@ struct chunk_file_t {
   int fd;
   off_t offset;
   long bytes_written;
+  int  corrupted:1;
 };
 
 /* File we are currently writing too, or currently loading from */
@@ -213,6 +214,22 @@ int load_chunk( struct chunk_file_t *fp, char *fpath )  {
   }
 
   fp->bytes_written = st.st_size;
+
+  /* Hmm a non emtpy chunk */
+  if( fp->bytes_written > 0 )  {
+     struct fkeymaster_t fkey;
+     int bytes_read;
+     while( 1 ) { 
+        bytes_read = read(fp->fd, &fkey, sizeof(fkey)); 
+        if( bytes_read != sizeof(fkey) )  {
+          fprintf(stderr,"Could not read: %s %s:%d\n", fp->fname, __FILE__, 
+                  __LINE__);
+          fp.corrupted |= 0x1;
+        } else {
+          
+        }
+     }
+  }
 
   return 0; 
 }

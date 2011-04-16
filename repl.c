@@ -15,18 +15,21 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include "array.h"
+#include "repl.h"
 
 struct global_t {
   int max_file_size;
 } global;
 
+/*
 struct repl_t {
-  /* Array of struct chunk_file_t */
+   Array of struct chunk_file_t 
   struct array_t *file_chunks;
 
-  /* Array of key/values */
+   Array of key/values 
   struct array_t *kv;
 };
+*/
 
 struct repl_t repl;
 
@@ -40,7 +43,8 @@ struct chunk_file_t {
 };
 
 /* File we are currently writing too, or currently loading from */
-struct chunk_file_t * current_chunk_file ;
+///struct chunk_file_t * current_chunk_file ;
+
 
 /* K/V we store in memory */
 struct mkeymaster_t {
@@ -66,7 +70,7 @@ int mark_current_file_corrupted()  {
 /**
  * Append data to the file
  */
-int repl_append( time_t now, char *key, char *data )  {
+int repl_append( struct repl_t *r, time_t now, char *key, char *data )  {
   struct iovec iov[3];
   struct mkeymaster_t *mkey;
   int    attempted_count;
@@ -86,10 +90,10 @@ int repl_append( time_t now, char *key, char *data )  {
   iov[2].iov_base = data;
   iov[2].iov_len = strlen(data)+1;
 
-  rc=writev( current_chunk_file->fd, iov, 3 );
+  rc=writev( r->current_chunk_file->fd, iov, 3 );
   if( rc == -1 )  {
     fprintf(stderr, "Could not write to %s, errno=%d, %s\n", 
-            current_chunk_file->fname, errno, strerror(errno) );
+            r->current_chunk_file->fname, errno, strerror(errno) );
     return -1;
   }
 
@@ -97,13 +101,13 @@ int repl_append( time_t now, char *key, char *data )  {
 
   if( rc != attempted_count )  {
     fprintf(stderr, "Could not write %s bytes, disk full?, errno=%d\n", 
-            current_chunk_file->fname, errno );
+            r->current_chunk_file->fname, errno );
     /* Mark current chunk as corrupted and close it */
     mark_current_file_corrupted();
     return -1;
   }
 
-  current_chunk_file->bytes_written += attempted_count;
+  r->current_chunk_file->bytes_written += attempted_count;
 
   mkey = (struct mkeymaster_t *)malloc(sizeof(struct mkeymaster_t));
   if( mkey == NULL )  {
@@ -113,7 +117,7 @@ int repl_append( time_t now, char *key, char *data )  {
 
   /* Copy over easy stuff */
   mkey->ts = now;
-  mkey->file = current_chunk_file;
+  mkey->file = r->current_chunk_file;
 
   /* Length of key with null */
   mkey->vpos = iov[0].iov_len + iov[1].iov_len; 
@@ -140,19 +144,20 @@ char * makefilename()  {
  * If current file is too big, close it and open another one 
  * This should be seamless and without anyone's strict knowledge. 
  */
-int repl_check_close()  {
+int repl_check_close( struct repl_t *r)  {
   char buff[PATH_MAX];
 
-  if( current_chunk_file == NULL )  {
+  if( r->current_chunk_file == NULL )  {
     struct chunk_file_t *fp =(struct chunk_file_t*)calloc(1, 
       sizeof(struct chunk_file_t));
     char *filename = makefilename();
     load_chunk( fp, filename );
     fp->fname = filename;
-    current_chunk_file = fp;
-  } else if( current_chunk_file->bytes_written > global.max_file_size )  {
-    current_chunk_file = NULL;
-    return repl_check_close();
+    r->current_chunk_file = fp;
+  } else if( r->current_chunk_file->bytes_written > global.max_file_size )  {
+    if( r->callback ) r->callback(r);
+    r->current_chunk_file = NULL;
+    return repl_check_close(r);
   }
 
   /* Always return goodness */
@@ -187,14 +192,17 @@ int repl_init( struct repl_t *r, const char *chunkpath ) {
         return -1;
       }
       load_chunk( fp, dp->d_name );
-      current_chunk_file = fp;
+      /* IF this file can still be written to set it as current, if we 
+         don't find a suitable file we will create a new one when we call
+         repl_check_close */
+      if( fp->bytes_written < global.max_file_size ) r->current_chunk_file = fp;
     }
   }
 
 
   closedir(dir);
 
-  return repl_check_close();
+  return repl_check_close(r);
 }
 
 int read_data_from_chunk( struct chunk_file_t *fp )  {
@@ -241,7 +249,9 @@ int read_data_from_chunk( struct chunk_file_t *fp )  {
     array_add_obj( repl.kv, mkey->key, mkey );
 
     offset += fkey.ksize + fkey.vsize;
-  } 
+  }
+
+  munmap( addr, fp->bytes_written ); 
 }
 
 /**
@@ -295,7 +305,7 @@ int main(int argc, char *argv[])  {
 
   repl_init( &repl, "logs" );
  
-  repl_append( time(0), "b", "d" );
-  repl_append( time(0), "bob", "" );
+  repl_append( &repl, time(0), "b", "d" );
+  repl_append( &repl, time(0), "bob", "" );
   repl_quit( &repl );
 } 

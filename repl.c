@@ -114,7 +114,7 @@ int repl_append( struct repl_t *r, time_t now, char *key, char *data )  {
 
   array_add_obj( repl.kv, key, mkey );
 
-  return 0;
+  return repl_check_close(r);
 }
 
 /**
@@ -289,12 +289,16 @@ int repl_quit( struct repl_t *r ) {
   return 0; 
 }
 
+void spill( struct repl_t *r ) {
+  printf("Spill\n");
+}
+
 int main(int argc, char *argv[])  {
 
   global.max_file_size = 1000;
 
   repl_init( &repl, "logs" );
- 
+  repl.callback = spill; 
   repl_append( &repl, time(0), "b", "d" );
   repl_append( &repl, time(0), "bob", "" );
   repl_quit( &repl );

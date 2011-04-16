@@ -21,16 +21,6 @@ struct global_t {
   int max_file_size;
 } global;
 
-/*
-struct repl_t {
-   Array of struct chunk_file_t 
-  struct array_t *file_chunks;
-
-   Array of key/values 
-  struct array_t *kv;
-};
-*/
-
 struct repl_t repl;
 
 /* Everything we need to know about a datafile */

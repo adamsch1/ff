@@ -16,10 +16,10 @@ typedef struct node_t {
   void *obj;
 
   /* And with IS_ above to figure out what it is */
-  int  bits;
+  int  bits:31;
 
   /* Sglib stuff, don't touch */
-  char color_field;
+  char color_field:1;
   struct node_t *left;
   struct node_t *right;
 } node;

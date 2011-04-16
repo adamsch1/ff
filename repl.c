@@ -12,6 +12,8 @@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 #include "array.h"
 
 struct global_t {
@@ -46,6 +48,7 @@ struct mkeymaster_t {
   struct chunk_file_t *file;
   off_t    vpos;
   uint32_t vsize; 
+  char *key;
 };
 
 /* Header we write for each record */
@@ -103,6 +106,10 @@ int repl_append( time_t now, char *key, char *data )  {
   current_chunk_file->bytes_written += attempted_count;
 
   mkey = (struct mkeymaster_t *)malloc(sizeof(struct mkeymaster_t));
+  if( mkey == NULL )  {
+    fprintf(stderr,"Malloc failed: %s:%d\n", __FILE__, __LINE__);
+    return -1;
+  }
 
   /* Copy over easy stuff */
   mkey->ts = now;
@@ -190,6 +197,53 @@ int repl_init( struct repl_t *r, const char *chunkpath ) {
   return repl_check_close();
 }
 
+int read_data_from_chunk( struct chunk_file_t *fp )  {
+  void *addr;
+  char *p;
+  struct fkeymaster_t fkey;
+  long offset = 0;
+  struct mkeymaster_t *mkey;
+
+  p = addr = mmap( 0, fp->bytes_written, PROT_READ, MAP_PRIVATE, fp->fd,
+               0 );
+  if( addr == NULL )  {
+    fprintf(stderr,"Could not read: %s %s:%d\n", fp->fname, __FILE__, 
+            __LINE__);
+    fp->corrupted |= 0x1;
+    return -1;
+  }
+
+  /* While we at least have enough space to read in the fkey */
+  while( offset + sizeof(struct fkeymaster_t) < fp->bytes_written )  {
+    memcpy( &fkey, addr+offset, sizeof(struct fkeymaster_t));
+
+    /* Skip past fix length header now at start of key/avlue */
+    offset += sizeof(struct fkeymaster_t) ;
+
+    /* Copy over easy stuff */
+    mkey = (struct mkeymaster_t *)malloc(sizeof(struct mkeymaster_t));
+    mkey->ts = fkey.ts;
+    mkey->file = fp;
+    mkey->vsize = fkey.vsize;
+
+    /* Allocate for the key and copy in the data */
+    mkey->key = malloc( fkey.ksize );
+    if( mkey->key == NULL ) { 
+      fprintf(stderr,"Malloc failed: %s:%d\n", __FILE__, __LINE__);
+      return -1;
+    }
+    memcpy( mkey->key, addr+offset, fkey.ksize ); 
+
+    /* Get position of value from file */
+    mkey->vpos = offset + fkey.ksize;
+
+    //printf("%s %s\n", mkey->key, p + mkey->vpos );
+    array_add_obj( repl.kv, mkey->key, mkey );
+
+    offset += fkey.ksize + fkey.vsize;
+  } 
+}
+
 /**
  * Read through file - create in memory key map
  */
@@ -217,18 +271,7 @@ int load_chunk( struct chunk_file_t *fp, char *fpath )  {
 
   /* Hmm a non emtpy chunk */
   if( fp->bytes_written > 0 )  {
-     struct fkeymaster_t fkey;
-     int bytes_read;
-     while( 1 ) { 
-        bytes_read = read(fp->fd, &fkey, sizeof(fkey)); 
-        if( bytes_read != sizeof(fkey) )  {
-          fprintf(stderr,"Could not read: %s %s:%d\n", fp->fname, __FILE__, 
-                  __LINE__);
-          fp.corrupted |= 0x1;
-        } else {
-          
-        }
-     }
+     return read_data_from_chunk( fp );
   }
 
   return 0; 
@@ -252,9 +295,7 @@ int main(int argc, char *argv[])  {
 
   repl_init( &repl, "logs" );
  
-  repl_append( time(0), "bob", "ross" );
-  repl_append( time(0), "bob", "ross" );
-  repl_append( time(0), "bob", "ross" );
-  repl_append( time(0), "bob", "ross" );
+  repl_append( time(0), "b", "d" );
+  repl_append( time(0), "bob", "" );
   repl_quit( &repl );
 } 

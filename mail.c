@@ -17,10 +17,11 @@ int mail(char *to, char *subject, char *message, struct array_t *headers )  {
   smtp_set_header( mess, "Subject", NULL, subject );
   smtp_add_recipient( mess, to );
 
-  if( headers )
-  for( n = array_first( headers ); n != NULL; 
-       n = array_next(headers) )  {
-//    smtp_set_header( message, n->key, NULL,  
+  if( headers )  {
+    for( n = array_first( headers ); n != NULL; 
+         n = array_next(headers) )  {
+      smtp_set_header( mess, NULL, n->value );
+    }
   }
 
   if ((fp = fopen ("./test.tpl", "r")) == NULL)

@@ -320,6 +320,8 @@ int form_free( struct form_t *form )  {
   array_free( form->arr );
   array_walk( form->err, free_rule );
   array_free( form->err );
+  array_walk( form->clean, free_rule );
+  array_free( form->clean );
   CGI_free_varlist( form->cgi );
   free(form);
 }

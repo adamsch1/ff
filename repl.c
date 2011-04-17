@@ -54,6 +54,8 @@ int mark_current_file_corrupted()  {
   return 0;
 }
 
+static int load_chunk( struct repl_t *r, struct chunk_file_t *fp, char *fpath );
+
 /**
  * Append data to the file
  */
@@ -97,21 +99,27 @@ int repl_append( struct repl_t *r, time_t now, char *key, char *data )  {
   //fsync(r->current_chunk_file->fd );
   r->current_chunk_file->bytes_written += attempted_count;
 
-  mkey = (struct mkeymaster_t *)malloc(sizeof(struct mkeymaster_t));
-  if( mkey == NULL )  {
-    fprintf(stderr,"Malloc failed: %s:%d\n", __FILE__, __LINE__);
-    return -1;
+  /* If there is data, then add the item to in memory array, if data len is 
+     1 then this means it's really a delete, so we write the delete to 
+     disk then don't add it to the in memory array
+  */
+  if( *data )  {
+    mkey = (struct mkeymaster_t *)malloc(sizeof(struct mkeymaster_t));
+    if( mkey == NULL )  {
+      fprintf(stderr,"Malloc failed: %s:%d\n", __FILE__, __LINE__);
+      return -1;
+    }
+
+    /* Copy over easy stuff */
+    mkey->ts = now;
+    mkey->file = r->current_chunk_file;
+    mkey->vsize = iov[2].iov_len;
+
+    /* Length of key with null */
+    mkey->vpos = r->current_chunk_file->bytes_written - iov[2].iov_len;
+
+    array_add_obj( r->kv, key, mkey );
   }
-
-  /* Copy over easy stuff */
-  mkey->ts = now;
-  mkey->file = r->current_chunk_file;
-  mkey->vsize = iov[2].iov_len;
-
-  /* Length of key with null */
-  mkey->vpos = r->current_chunk_file->bytes_written - iov[2].iov_len;
-
-  array_add_obj( r->kv, key, mkey );
 
   return repl_check_close(r);
 }
@@ -196,6 +204,19 @@ int repl_init( struct repl_t *r, const char *chunkpath ) {
   return repl_check_close(r);
 }
 
+int repl_del( struct repl_t *r, char *key )  {
+  struct mkeymaster_t *km;
+  int rc; 
+  struct node_t *n;
+  char empty[]="";
+
+  km = array_remove( r->kv, key );
+  if( km )  {
+    return repl_append( r, time(0), key, empty );    
+  }
+  return 0;
+}
+
 int repl_get( struct repl_t *r, char *key, char **data )  {
   struct mkeymaster_t *km;
   int rc; 
@@ -231,7 +252,7 @@ int repl_get( struct repl_t *r, char *key, char **data )  {
   return 1;
 }
 
-int read_data_from_chunk( struct repl_t *r, struct chunk_file_t *fp )  {
+static int read_data_from_chunk( struct repl_t *r, struct chunk_file_t *fp )  {
   void *addr;
   char *p;
   struct fkeymaster_t fkey;
@@ -254,16 +275,21 @@ int read_data_from_chunk( struct repl_t *r, struct chunk_file_t *fp )  {
     /* Skip past fix length header now at start of key/avlue */
     offset += sizeof(struct fkeymaster_t) ;
 
-    /* Copy over easy stuff */
-    mkey = (struct mkeymaster_t *)malloc(sizeof(struct mkeymaster_t));
-    mkey->ts = fkey.ts;
-    mkey->file = fp;
-    mkey->vsize = fkey.vsize;
+    /* Items with data size 1 are deletion markers, so skip loading */
+    if( fkey.vsize > 1 )  {
+      /* Copy over easy stuff */
+      mkey = (struct mkeymaster_t *)malloc(sizeof(struct mkeymaster_t));
+      mkey->ts = fkey.ts;
+      mkey->file = fp;
+      mkey->vsize = fkey.vsize;
 
-    /* Get position of value from file */
-    mkey->vpos = offset + fkey.ksize;
+      /* Get position of value from file */
+      mkey->vpos = offset + fkey.ksize;
 
-    array_add_obj( r->kv, addr+offset, mkey );
+      array_add_obj( r->kv, addr+offset, mkey );
+    } else {
+      printf("hey a dleeted on \n");
+    }
 
     offset += fkey.ksize + fkey.vsize;
   }
@@ -274,7 +300,8 @@ int read_data_from_chunk( struct repl_t *r, struct chunk_file_t *fp )  {
 /**
  * Read through file - create in memory key map
  */
-int load_chunk( struct repl_t *r, struct chunk_file_t *fp, char *fpath )  {
+static int load_chunk( struct repl_t *r, struct chunk_file_t *fp, 
+                       char *fpath )  {
   char buff[PATH_MAX];
   struct stat st;
 
@@ -347,5 +374,6 @@ int main(int argc, char *argv[])  {
     free(value);
   }
 
+  repl_del( &repl, "bob" );
   repl_quit( &repl );
 } 

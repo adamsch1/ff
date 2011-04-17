@@ -38,7 +38,7 @@ void * array_get_obj( struct array_t *arr, char *key )  {
   node entry;
 
   entry.key = key; 
-  if( (n=sglib_node_find_member( arr->head, &entry )) == NULL ) { 
+  if( (n=sglib_node_find_member( arr->head, &entry )) != NULL ) { 
     return n->obj;
   } else {
     return NULL;
@@ -160,7 +160,8 @@ void array_walk( struct array_t *arr, void (*callback)(struct array_t *arr,
 
 void main() {
   struct array_t *arr = array_new();
-  array_add_str(arr, strdup("key"), strdup("value"));
+  array_add_obj(arr, strdup("key"), strdup("value"));
+  printf("%x\n",array_get_node(arr, "key" ));
   array_free( arr);
 }
 #endif 

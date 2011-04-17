@@ -21,8 +21,6 @@ struct global_t {
   int max_file_size;
 } global;
 
-struct repl_t repl;
-
 /* Everything we need to know about a datafile */
 struct chunk_file_t {
   char *fname;
@@ -42,7 +40,6 @@ struct mkeymaster_t {
   struct chunk_file_t *file;
   off_t    vpos;
   uint32_t vsize; 
-  char *key;
 };
 
 /* Header we write for each record */
@@ -97,6 +94,7 @@ int repl_append( struct repl_t *r, time_t now, char *key, char *data )  {
     return -1;
   }
 
+  //fsync(r->current_chunk_file->fd );
   r->current_chunk_file->bytes_written += attempted_count;
 
   mkey = (struct mkeymaster_t *)malloc(sizeof(struct mkeymaster_t));
@@ -108,11 +106,12 @@ int repl_append( struct repl_t *r, time_t now, char *key, char *data )  {
   /* Copy over easy stuff */
   mkey->ts = now;
   mkey->file = r->current_chunk_file;
+  mkey->vsize = iov[2].iov_len;
 
   /* Length of key with null */
-  mkey->vpos = iov[0].iov_len + iov[1].iov_len; 
+  mkey->vpos = r->current_chunk_file->bytes_written - iov[2].iov_len;
 
-  array_add_obj( repl.kv, key, mkey );
+  array_add_obj( r->kv, key, mkey );
 
   return repl_check_close(r);
 }
@@ -141,7 +140,7 @@ int repl_check_close( struct repl_t *r)  {
     struct chunk_file_t *fp =(struct chunk_file_t*)calloc(1, 
       sizeof(struct chunk_file_t));
     char *filename = makefilename();
-    load_chunk( fp, filename );
+    load_chunk( r, fp, filename );
     fp->fname = filename;
     r->current_chunk_file = fp;
   } else if( r->current_chunk_file->bytes_written > global.max_file_size )  {
@@ -181,7 +180,7 @@ int repl_init( struct repl_t *r, const char *chunkpath ) {
         fprintf(stderr,"Malloc failed: %s:%d\n", __FILE__, __LINE__);
         return -1;
       }
-      load_chunk( fp, dp->d_name );
+      load_chunk( r, fp, dp->d_name );
       /* IF this file can still be written to set it as current, if we 
          don't find a suitable file we will create a new one when we call
          repl_check_close */
@@ -195,7 +194,42 @@ int repl_init( struct repl_t *r, const char *chunkpath ) {
   return repl_check_close(r);
 }
 
-int read_data_from_chunk( struct chunk_file_t *fp )  {
+int repl_get( struct repl_t *r, char *key, char **data )  {
+  struct mkeymaster_t *km;
+  int rc; 
+  struct node_t *n;
+
+  km = array_get_obj( r->kv, key );
+  if( !km )  {
+    return 0;
+  }
+
+  *data = (char*)malloc( km->vsize );
+  if( !*data )  {
+    fprintf(stderr,"Malloc failed: %s:%d\n", __FILE__, __LINE__);
+    return -1;
+  }
+
+  rc = lseek( km->file->fd, km->vpos, 0 );
+  if( rc != km->vpos )  {
+    fprintf(stderr,"Could not seek: %s offs=%d  %s:%d\n", km->file->fname, 
+            km->vpos, __FILE__, __LINE__);
+    free(*data);
+    return -1;
+  }
+
+  rc = read( km->file->fd, *data, km->vsize );
+  if( rc != km->vsize )  {
+    fprintf(stderr,"Could not read: %s offs=%d count=%d %s:%d\n", 
+            km->file->fname, km->vpos, km->vsize, __FILE__, __LINE__);
+    free(*data);
+    return -1;
+  }
+
+  return 1;
+}
+
+int read_data_from_chunk( struct repl_t *r, struct chunk_file_t *fp )  {
   void *addr;
   char *p;
   struct fkeymaster_t fkey;
@@ -224,19 +258,10 @@ int read_data_from_chunk( struct chunk_file_t *fp )  {
     mkey->file = fp;
     mkey->vsize = fkey.vsize;
 
-    /* Allocate for the key and copy in the data */
-    mkey->key = malloc( fkey.ksize );
-    if( mkey->key == NULL ) { 
-      fprintf(stderr,"Malloc failed: %s:%d\n", __FILE__, __LINE__);
-      return -1;
-    }
-    memcpy( mkey->key, addr+offset, fkey.ksize ); 
-
     /* Get position of value from file */
     mkey->vpos = offset + fkey.ksize;
 
-    //printf("%s %s\n", mkey->key, p + mkey->vpos );
-    array_add_obj( repl.kv, mkey->key, mkey );
+    array_add_obj( r->kv, addr+offset, mkey );
 
     offset += fkey.ksize + fkey.vsize;
   }
@@ -247,7 +272,7 @@ int read_data_from_chunk( struct chunk_file_t *fp )  {
 /**
  * Read through file - create in memory key map
  */
-int load_chunk( struct chunk_file_t *fp, char *fpath )  {
+int load_chunk( struct repl_t *r, struct chunk_file_t *fp, char *fpath )  {
   char buff[PATH_MAX];
   struct stat st;
 
@@ -271,7 +296,7 @@ int load_chunk( struct chunk_file_t *fp, char *fpath )  {
 
   /* Hmm a non emtpy chunk */
   if( fp->bytes_written > 0 )  {
-     return read_data_from_chunk( fp );
+     return read_data_from_chunk( r, fp );
   }
 
   return 0; 
@@ -281,8 +306,8 @@ int repl_quit( struct repl_t *r ) {
   node *n;
   struct chunk_file_t *cp;
 
-  for( n=array_first( repl.file_chunks ); n != NULL; 
-       n = array_next( repl.file_chunks ) ) { 
+  for( n=array_first( r->file_chunks ); n != NULL; 
+       n = array_next( r->file_chunks ) ) { 
     cp = (struct chunk_file_t *)n->obj;
     close(cp->fd);
   }
@@ -294,12 +319,17 @@ void spill( struct repl_t *r ) {
 }
 
 int main(int argc, char *argv[])  {
+  char * value;
+  struct repl_t repl = {0};
 
   global.max_file_size = 1000;
 
   repl_init( &repl, "logs" );
   repl.callback = spill; 
   repl_append( &repl, time(0), "b", "d" );
-  repl_append( &repl, time(0), "bob", "" );
+  repl_append( &repl, time(0), "bob", "dic" );
+
+  repl_get( &repl, "bob", &value );
+  printf("%s\n", value );
   repl_quit( &repl );
 } 

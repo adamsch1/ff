@@ -175,7 +175,7 @@ struct chunk_t * template_load( char * source )  {
   template entry;
   char finalpath[PATH_MAX];
 
-  printf("%d\n", sprintf( finalpath, "%s/%s", path, source ));     
+  sprintf( finalpath, "%s/%s", path, source );
 
   /* Stat file to get the mtime and size */
   if( stat( finalpath, &st )  < 0 )  {

@@ -11,6 +11,9 @@ struct array_t * array_new()  {
   return arr;
 }
 
+/**
+ * Returns true of array is empty
+ */
 int array_empty( struct array_t *arr )  {
   return arr->head == NULL ;
 }
@@ -90,6 +93,26 @@ char * array_get( struct array_t *arr, char *key )  {
 }
 
 /**
+ * Remove the thing - free value if str return OBJ if object or NULL if str
+ */
+void * array_remove( struct array_t *arr, char *key )  {
+  node entry;
+  node *result;
+  void *obj=NULL;
+  int rc;
+
+  entry.key = key;
+  rc=sglib_node_delete_if_member( &arr->head, &entry, &result );
+  if( rc )  {
+    free(result->key);
+    if( result->bits & IS_STR ) free(result->value);
+    obj = result->obj;
+    free(result);
+  }
+  return obj;
+}
+
+/**
  * Add obj.  We allocate copy of key  
  */
 void array_add_obj( struct array_t *arr, char *key, void *obj ) { 
@@ -121,7 +144,7 @@ void array_free( struct array_t *arr ) {
   for( np=sglib_node_it_init(&it, arr->head); np != NULL; 
     np=sglib_node_it_next(&it))  {
     free(np->key);
-    free(np->value);
+    if( np->bits & IS_STR ) free(np->value);
     free(np);
   }
 
@@ -161,6 +184,8 @@ void array_walk( struct array_t *arr, void (*callback)(struct array_t *arr,
 void main() {
   struct array_t *arr = array_new();
   array_add_obj(arr, strdup("key"), strdup("value"));
+  printf("%x\n",array_get_node(arr, "key" ));
+  array_remove(arr, "key");
   printf("%x\n",array_get_node(arr, "key" ));
   array_free( arr);
 }

@@ -39,6 +39,7 @@ node * array_get_node( struct array_t *arr, char *key );
 char * array_get( struct array_t *arr, char *key );
 char * array_get_macro( struct array_t *arr, char *key );
 void * array_get_obj( struct array_t *arr, char *key );
+void * array_remove( struct array_t *arr, char *key );
 int array_empty( struct array_t *arr );
 
 /* Iterator support */

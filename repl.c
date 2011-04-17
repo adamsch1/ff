@@ -155,7 +155,7 @@ int repl_check_close( struct repl_t *r)  {
 
 int repl_init( struct repl_t *r, const char *chunkpath ) { 
   struct dirent *dp;
-  DIR *dir = opendir( chunkpath );
+  DIR *dir;
   char *str;
   char buff[PATH_MAX];
 
@@ -181,6 +181,7 @@ int repl_init( struct repl_t *r, const char *chunkpath ) {
         return -1;
       }
       load_chunk( r, fp, dp->d_name );
+      array_add_obj( r->file_chunks, dp->d_name, fp );
       /* IF this file can still be written to set it as current, if we 
          don't find a suitable file we will create a new one when we call
          repl_check_close */
@@ -292,6 +293,7 @@ int load_chunk( struct repl_t *r, struct chunk_file_t *fp, char *fpath )  {
     return -1;
   }
 
+  fp->fname = strdup(fpath);
   fp->bytes_written = st.st_size;
 
   /* Hmm a non emtpy chunk */
@@ -310,7 +312,17 @@ int repl_quit( struct repl_t *r ) {
        n = array_next( r->file_chunks ) ) { 
     cp = (struct chunk_file_t *)n->obj;
     close(cp->fd);
+    free(cp->fname);
+    free(cp);
   }
+ 
+  for( n=array_first( r->kv ); n != NULL;
+       n=array_next( r->kv ) )  {
+    struct mkeymaster_t *km = n->obj;
+    free(km);
+  } 
+  array_free( r->file_chunks );
+  array_free( r->kv );
   return 0; 
 }
 
@@ -329,7 +341,10 @@ int main(int argc, char *argv[])  {
   repl_append( &repl, time(0), "b", "d" );
   repl_append( &repl, time(0), "bob", "dic" );
 
-  repl_get( &repl, "bob", &value );
-  printf("%s\n", value );
+  if( repl_get( &repl, "bob", &value ) )  {
+    printf("%s\n", value );
+    free(value);
+  }
+
   repl_quit( &repl );
 } 

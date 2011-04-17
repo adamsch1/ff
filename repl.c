@@ -30,10 +30,6 @@ struct chunk_file_t {
   int  corrupted:1;
 };
 
-/* File we are currently writing too, or currently loading from */
-///struct chunk_file_t * current_chunk_file ;
-
-
 /* K/V we store in memory */
 struct mkeymaster_t {
   time_t ts;
@@ -287,7 +283,6 @@ static int read_data_from_chunk( struct repl_t *r, struct chunk_file_t *fp )  {
       /* Get position of value from file */
       mkey->vpos = offset + fkey.ksize;
 
-      printf("Adding: %s\n", addr+offset );
       array_add_obj( r->kv, addr+offset, mkey );
     } else {
       mkey = array_remove( r->kv, addr+offset );

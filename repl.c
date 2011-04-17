@@ -212,7 +212,8 @@ int repl_del( struct repl_t *r, char *key )  {
 
   km = array_remove( r->kv, key );
   if( km )  {
-    return repl_append( r, time(0), key, empty );    
+    rc =  repl_append( r, time(0), key, empty );    
+    free(km);
   }
   return 0;
 }
@@ -286,9 +287,11 @@ static int read_data_from_chunk( struct repl_t *r, struct chunk_file_t *fp )  {
       /* Get position of value from file */
       mkey->vpos = offset + fkey.ksize;
 
+      printf("Adding: %s\n", addr+offset );
       array_add_obj( r->kv, addr+offset, mkey );
     } else {
-      printf("hey a dleeted on \n");
+      mkey = array_remove( r->kv, addr+offset );
+      if( mkey ) free(mkey);
     }
 
     offset += fkey.ksize + fkey.vsize;
@@ -369,8 +372,10 @@ int main(int argc, char *argv[])  {
   repl_append( &repl, time(0), "b", "d" );
   repl_append( &repl, time(0), "bob", "dic" );
 
-  if( repl_get( &repl, "bob", &value ) )  {
-    printf("%s\n", value );
+  repl_append( &repl, time(0), "cutloaf", "dude" );
+  repl_del( &repl, "cutloaf" );
+  if( repl_get( &repl, "cutloaf", &value ) )  {
+    printf("DUDE: %s\n", value );
     free(value);
   }
 

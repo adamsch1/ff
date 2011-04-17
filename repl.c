@@ -178,6 +178,7 @@ int repl_init( struct repl_t *r, const char *chunkpath ) {
         sizeof(struct chunk_file_t));
       if( fp == NULL )  {
         fprintf(stderr,"Malloc failed: %s:%d\n", __FILE__, __LINE__);
+        closedir(dir);
         return -1;
       }
       load_chunk( r, fp, dp->d_name );

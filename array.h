@@ -42,6 +42,10 @@ void * array_get_obj( struct array_t *arr, char *key );
 void * array_remove( struct array_t *arr, char *key );
 int array_empty( struct array_t *arr );
 
+/* Serialize to char **/
+int array_serialize( struct array_t *arr, char **outs );
+int array_deserialize( struct array_t *arr, char *input );
+
 /* Iterator support */
 node * array_first( struct array_t *arr );
 node * array_next( struct array_t *arr );

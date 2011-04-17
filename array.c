@@ -2,6 +2,7 @@
 #include <string.h>
 #include "array.h"
 #include "sglib.h"
+#include <stdio.h>
 
 #define COMPARATOR(x,y) (strcmp(x->key,y->key))
 SGLIB_DEFINE_RBTREE_FUNCTIONS( node, left, right, color_field, COMPARATOR );
@@ -46,6 +47,51 @@ void * array_get_obj( struct array_t *arr, char *key )  {
   } else {
     return NULL;
   }
+}
+
+/**
+ * Convert a serialized array back to a C datastructure.
+ */
+int array_deserialize( struct array_t *arr, char *input )  {
+  char *p;
+  char *skey;
+  char *svalue;
+  char t;
+
+  skey = svalue = p = input;
+  while( *p )  {
+    if( *p == '\1' )  {
+      *p = 0;
+      svalue = p+1;
+    } else if( *p == '\2' )  {
+      *p = 0;
+      array_add_str( arr, skey, svalue );
+      skey = p+1;
+    }
+    p++;
+  }
+
+  return 0;
+}
+
+/**
+ * Convert array to string.  We separate keys with 0x1 and values with 0x2
+ */
+int array_serialize( struct array_t *arr, char **outs )  {
+  node *n;
+  int count = 0;
+  char *str = 0;
+
+  for( n=array_first( arr ); n != NULL;
+       n = array_next( arr ) ) {
+    str = *outs;
+    /* Not portable but my world always involves GNU or FreeBSD */
+    count = asprintf( outs, "%s%s\1%s\2", str == NULL ? "" : str,
+                      n->key, n->value  );
+    if( str ) free(str);
+  }
+
+  return count; 
 }
 
 /**
@@ -179,14 +225,30 @@ void array_walk( struct array_t *arr, void (*callback)(struct array_t *arr,
   
 }
 
-#if 0
+#if 1
 
 void main() {
   struct array_t *arr = array_new();
-  array_add_obj(arr, strdup("key"), strdup("value"));
-  printf("%x\n",array_get_node(arr, "key" ));
-  array_remove(arr, "key");
-  printf("%x\n",array_get_node(arr, "key" ));
+  int k=0;
+  char *out=NULL;
+  struct array_t *arr2 = array_new();
+  node *n;
+
+  for(k=0; k<10; k++ )  {
+    array_add_str( arr, "k", "v" );
+  }
+
+  k=array_serialize( arr, &out );
+  printf("%d %s \n", k, out );
+  
+  array_deserialize( arr2, out );
+  
+  for( n=array_first(arr2); n!=NULL; n = array_next(arr2))  {
+    printf("%s %s\n", n->key, n->value );
+  }  
+ 
+  free(out);
   array_free( arr);
+  array_free( arr2);
 }
 #endif 

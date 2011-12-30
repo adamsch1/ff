@@ -9,7 +9,7 @@
 <% $errors.password %><br>
 <% endif %>
 
-<form action="http://localhost:8888/blog/post" method="post">
+<form action="/blog/post" method="post">
   Email <input type="text" name="email" value="<% $email %>"><br>
   Password <input type="password" name="password" value="<% $password %>"><br>
   <input type="submit" value="Submit">

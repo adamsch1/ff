@@ -46,10 +46,9 @@ void blog_post() {
   form_set_rule_sval( form, "password", "Password", 
                       RULE_REQUIRED|RULE_SMIN, 6 );
 
-  printf("Content-type: text/html\r\n\r\n");
   if( form_validate( form ) )  {
     template_run( "test.tpl", 0 );
-    printf("<b>Success:</b><br> \n");
+    printf("<b>Success</b><br> \n");
   } else {
     template_run_form( "test.tpl", form, 0 );
   }

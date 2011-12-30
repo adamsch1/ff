@@ -2,6 +2,7 @@
 #include <string.h>
 #include "array.h"
 #include "sglib.h"
+#define _GNU_SOURCE
 #include <stdio.h>
 
 #define COMPARATOR(x,y) (strcmp(x->key,y->key))
@@ -225,7 +226,7 @@ void array_walk( struct array_t *arr, void (*callback)(struct array_t *arr,
   
 }
 
-#if 1
+#if 0
 
 void main() {
   struct array_t *arr = array_new();

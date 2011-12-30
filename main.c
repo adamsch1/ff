@@ -8,6 +8,7 @@
 
 #include "ff.h"
 #include "route.h"
+#include "session.h"
 
 extern struct timeval start_time, end_time, difference_time;
 int main () {
@@ -17,10 +18,14 @@ int main () {
     /* Load the controller .so from this sub directory */
     route_import_controllers("controllers/");
 
+    /* Initialize session system */
+    session_init();
+
     while (FCGI_Accept() >= 0) {
       /* Record start time */
       gettimeofday(&start_time,NULL);
 
+      session_start();
 //      dumpcgi();
 
       /* Dispatch the request to the correct controller */

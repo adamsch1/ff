@@ -68,7 +68,11 @@ void session_start()  {
       fprintf(stderr,"We don't have this cookie \n");
       create_session();
     }
-  } 
+  } else {
+    /* No session cookie - make one */
+    fprintf(stderr,"We don't have this cookie \n");
+    create_session();
+  }
 }
 
 struct array_t * session_get()  {
@@ -88,7 +92,7 @@ void session_destroy()  {
       array_remove( sessions, id );
       array_free( sess );
     }
-    printf("Set-Cookie: FSESSIONID=None; expires=Friday, 31-Dec-2010 08:00:00 GMT\r\n" );
+    printf("Set-Cookie: FSESSIONID=; expires=Friday, 31-December-2010 08:00:00 GMT\r\n" );
   }
 }
 

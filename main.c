@@ -25,11 +25,14 @@ int main () {
       /* Record start time */
       gettimeofday(&start_time,NULL);
 
+      request_uri = cleanrequest( getenv("REQUEST_URI"));
+
       /* Initialize session for this request */
+      fprintf(stderr, "Request for %s\n", request_uri );
+
       session_start();
 
       /* Dispatch the request to the correct controller */
-      request_uri = cleanrequest( getenv("REQUEST_URI"));
       route_dispatch(request_uri);
       free(request_uri);
      
@@ -38,7 +41,10 @@ int main () {
       timeval_diff( &difference_time, &end_time, &start_time );      
 
       printf("time: %ld.%06ld\n", difference_time.tv_sec, difference_time.tv_usec);
+
+      FCGI_Finish();
     }
 
+    fprintf(stderr, "FF Exiting\n");
     return 0;
 }

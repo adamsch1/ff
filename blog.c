@@ -43,7 +43,7 @@ void blog()  {
 }
 
 void logout()  {
-  fprintf( stderr, "Calling session_destroy\n");
+  fprintf( stderr, "Logout: Calling session_destroy\n");
   session_destroy();
 }
 

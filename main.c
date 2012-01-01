@@ -25,8 +25,8 @@ int main () {
       /* Record start time */
       gettimeofday(&start_time,NULL);
 
+      /* Initialize session for this request */
       session_start();
-//      dumpcgi();
 
       /* Dispatch the request to the correct controller */
       request_uri = cleanrequest( getenv("REQUEST_URI"));

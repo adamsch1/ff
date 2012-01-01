@@ -4,11 +4,13 @@
 #include "ccgi.h"
 #include "util.h"
 #include "form.h"
+#include "session.h"
 #include <stdlib.h>
 
 void blog();
 void comment();
 void blog_post();
+void logout();
 
 /**
  * Tell ff what we provide
@@ -17,6 +19,7 @@ struct ff_controller_t head[] = {
   { "/blog", blog  },
   { "/blog/post", blog_post },
   { "/blog/comments", comment },
+  { "/blog/logout", logout },
   { 0 }
 };
 
@@ -37,6 +40,11 @@ void blog()  {
   struct array_t *arr = array_new();
 
   template_run("test.tpl", arr);
+}
+
+void logout()  {
+  fprintf( stderr, "Calling session_destroy\n");
+  session_destroy();
 }
 
 void blog_post() {

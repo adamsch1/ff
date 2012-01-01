@@ -19,6 +19,7 @@ struct array_t *sessions;
 
 /* Current session */
 struct array_t *sess;
+char *id;
 
 /**
  * Initalize session system 
@@ -44,10 +45,44 @@ void session_start()  {
       if( sess == NULL )  {
         sess = array_new();
         array_add_obj( sessions, temp, sess ); 
+      } else {
+        fprintf(stderr, "Fetching prior session from memory: %s\n",
+          value);
       }
       free(temp);
     } else {
-      printf("Set-Cookie: FSESSIONID=1234\r\n");
+      char buff[255];
+      /* XXX Fix */
+      snprintf( buff, sizeof(buff), "%ld", time(0));
+      sess = array_new();
+      array_add_str( sess, "FSESSIONID", buff );
+      array_add_obj( sessions, buff, sess ); 
+      printf("Set-Cookie: FSESSIONID=%s\r\n", buff );
     }
   } 
 }
+
+struct array_t * session_get()  {
+  return sess;
+}
+
+void session_destroy()  {
+  char *id;
+  fprintf( stderr, "session_destroy()\n");
+  if( sess )  {
+    fprintf( stderr, "have session\n");
+    id = array_get( sess, "FSESSIONID" );  
+    if( !id ) { 
+      fprintf(stderr, "Have session but no FSESSIONID set!\n");
+    } else {
+      fprintf( stderr, "Removing session: %s\n", id );
+      array_remove( sessions, id );
+      array_free( sess );
+    }
+    printf("Set-Cookie: FSESSIONID=None; expires=Friday, 31-Dec-2010 08:00:00 GMT\r\n" );
+  }
+}
+
+
+
+

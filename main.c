@@ -12,7 +12,6 @@
 
 extern struct timeval start_time, end_time, difference_time;
 int main () {
-    int count = 0;
     char * request_uri;
 
     /* Load the controller .so from this sub directory */
@@ -29,8 +28,6 @@ int main () {
 
       /* Initialize session for this request */
       fprintf(stderr, "Request for %s\n", request_uri );
-
-      session_start();
 
       /* Dispatch the request to the correct controller */
       route_dispatch(request_uri);

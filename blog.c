@@ -39,6 +39,8 @@ void init()  {
 void blog()  {
   struct array_t *arr = array_new();
 
+  session_init();
+
   template_run("test.tpl", arr);
 }
 
@@ -49,6 +51,8 @@ void logout()  {
 
 void blog_post() {
   struct form_t *form = form_new();
+
+  session_init();
 
   form_set_rule( form, "email", "Email", RULE_REQUIRED|RULE_EMAIL )  ;
   form_set_rule_sval( form, "password", "Password", 

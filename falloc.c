@@ -30,7 +30,6 @@ void * falloc( void *ctx, size_t size )  {
 
   if( !ctx )  {
     t = malloc(size + HSIZE);
-    memset(t, 0xF, size+HSIZE);
     if( !t ) return 0;
     t->child = 0;
     t->next = 0;

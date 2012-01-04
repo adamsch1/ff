@@ -5,6 +5,7 @@
 struct foo_t {
   struct foo_t *next;
   struct foo_t *child;
+  struct foo_t *parent;
 };
 
 #define HSIZE ( sizeof(struct foo_t) )
@@ -33,12 +34,14 @@ void * falloc( void *ctx, size_t size )  {
     if( !t ) return 0;
     t->child = 0;
     t->next = 0;
+    t->parent = 0;
     return (char*)t + HSIZE;
   } else {
     t = malloc(size+HSIZE);
     if( !t ) return 0;
     t->child = 0;
     t->next = B(ctx)->child;
+    t->parent = B(ctx);
     B(ctx)->child = t;
     return (char*)t + HSIZE;
   }
@@ -49,14 +52,30 @@ void * falloc( void *ctx, size_t size )  {
  * This only deals with ctx that points to beginning of mem block
  **/
 static void _ffree( struct foo_t *ctx )  {
+  struct foo_t *iter;
+  struct foo_t *prior;
 
   if( ctx->child )  {
     _ffree( ctx->child );
   } 
 
-  if( ctx->next ) _ffree( ctx->next );
+  if( ctx->next ) {
+    _ffree( ctx->next );
+  }
 
-  free( ctx );
+  if( ctx->parent == NULL )  {
+    free(ctx); 
+  } else {
+    iter = ctx->parent->child;
+    while( iter )  {
+      prior = iter;
+      iter = iter->next;
+      if( iter == ctx )  {
+        prior->next = iter->next; 
+      }
+    }   
+    free( ctx );
+  }
 }
 
 void ffree( void *ctx )  {
@@ -65,21 +84,17 @@ void ffree( void *ctx )  {
 }
 
 
-#if 0
+#if 1
 int main() { 
   char *p = NULL;
   char *s = NULL;
 
   p = falloc( NULL, 255 );
   s = falloc( p, 255 ); 
-  s = falloc( p, 255 ); 
-  s = falloc( p, 255 ); 
-  s = falloc( p, 255 ); 
-  s = falloc( p, 255 ); 
-  s = falloc( s, 255 ); 
   printf("p=%x\n",p);
   printf("s=%x\n",s);
 
+  ffree(s);
   ffree(p);
   return 0;
 }

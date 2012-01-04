@@ -57,7 +57,6 @@ int array_deserialize( struct array_t *arr, char *input )  {
   char *p;
   char *skey;
   char *svalue;
-  char t;
 
   skey = svalue = p = input;
   while( *p )  {

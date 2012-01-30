@@ -4,6 +4,7 @@ ff
 *.a
 *.log
 *.cache
+*.so
 config.status
 a.out
-Makefile
+*.swp

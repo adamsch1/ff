@@ -16,7 +16,7 @@ void logout();
  * Tell ff what we provide
  */
 struct ff_controller_t head[] = {
-  { "/blog", blog  },
+  { "/blog/test", blog  },
   { "/blog/post", blog_post },
   { "/blog/comments", comment },
   { "/blog/logout", logout },
@@ -28,6 +28,7 @@ struct ff_controller_t head[] = {
  */
 void init()  {
   template_init();
+  session_init();
 }
 
 /**
@@ -37,11 +38,14 @@ void init()  {
  * it can free everything after the call
  */
 void blog()  {
-  struct array_t *arr = array_new();
+  struct array_t *sarr = array_new();
 
-  session_init();
+  session_start();
 
-  template_run("test.tpl", arr);
+  fprintf( stderr, "blog: Entering\n");
+ 
+  sarr = session_get();
+  template_run("test.tpl", sarr);
 }
 
 void logout()  {
@@ -51,8 +55,9 @@ void logout()  {
 
 void blog_post() {
   struct form_t *form = form_new();
+  struct array_t *sarr;
 
-  session_init();
+  session_start();
 
   form_set_rule( form, "email", "Email", RULE_REQUIRED|RULE_EMAIL )  ;
   form_set_rule_sval( form, "password", "Password", 
@@ -61,6 +66,14 @@ void blog_post() {
   if( form_validate( form ) )  {
     template_run( "test.tpl", 0 );
     printf("<b>Success</b><br> \n");
+    sarr = session_get();
+    if( sarr == NULL )  {
+      fprintf( stderr, "blog_post: session was null\n");
+    } else {
+      array_add_str( sarr, strdup("validated"), "true" );
+    }
+    
+    
   } else {
     template_run_form( "test.tpl", form, 0 );
   }

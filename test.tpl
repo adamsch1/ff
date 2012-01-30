@@ -11,6 +11,7 @@
 
 <a href="/blog/logout">logout</a>
 
+<% $validated %>
 <form action="/blog/post" method="post">
   Email <input type="text" name="email" value="<% $email %>"><br>
   Password <input type="password" name="password" value="<% $password %>"><br>

@@ -247,6 +247,7 @@ struct chunk_t * parse_logic( char ** them )  {
   char *start;
   int have_if = 0;
   int have_endif = 0;
+  int have_while = 0;
   struct chunk_t * chunk=NULL;
   char ch;
   while( *p )  {
@@ -273,6 +274,17 @@ struct chunk_t * parse_logic( char ** them )  {
       fprintf( stderr, "Close tag without macro\n");
       p += 2; 
       *them = p;
+      return chunk;
+    } else if( strncmp( p, "while", 5 ) == 0 )  {
+      /* While */
+      have_while = 1;
+      p+=5;
+      continue;
+    } else if( strncmp( p, "endwhile", 8 ) == 0 )  {
+      /* While */
+      chunk = chunk_new( NULL );
+      chunk->endwhile = 1;
+      p+=8;
       return chunk;
     } else if( *p == 'i' && *(p+1) == 'f' )  {
       /* boolean logic */

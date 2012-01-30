@@ -9,7 +9,11 @@ struct chunk_t {
   int  macro: 1;
   int  isif: 1;
   int  endif: 1;
+  int  iswhile: 1;
+  int  endwhile: 1;
   struct chunk_t *next;
+
+  struct chunk_t *jump_while;
 };
 
 int template_init();

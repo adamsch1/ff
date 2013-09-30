@@ -1,3 +1,11 @@
+UPDATE
+
+I am no longer working on this - instead I am working on a cooler solution which combines a http server and a compiler 
+in one application.  You write C programs and skip the compliation phase, the internal C compiler automatically 
+compiles the script to memory and executes it.  I am using libevent for the HTTP stuff and tcc for the compiler.
+
+http://github.com/adamsch1/rub
+
 FF - Fast Framework.
 
 This is an experiment.  There are many web frameworks out there for every
@@ -7,3 +15,4 @@ goal was making web development with C easy.
 
 Fuper
 http://fuper.com
+
